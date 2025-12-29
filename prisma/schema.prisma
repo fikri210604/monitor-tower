@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  OPERATOR
+}
+
+enum StatusPenyelesaianAset {
+  BELUM_TERBIT_SERTIFIKAT
+  SUDAH_TERBIT_SERTIFIKAT
+}
+
+enum StatusPenguasaanTanah {
+  DIKUASAI
+  TIDAK_DIKUASAI
+}
+
+enum JenisBangunan {
+  GARDU_INDUK
+  TAPAK_TOWER
+}
+
+enum PermasalahanAset {
+  CLEAN_AND_CLEAR
+  TUMPAK_TINDIH
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  username  String   @unique
+  password  String
+  role      Role     @default(OPERATOR)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+
+// --- TABEL UTAMA: ASET TOWER (Flat Model) ---
+model AsetTower {
+  id              String   @id @default(uuid())
+  kodeSap         Int      @default(10100)
+  kodeUnit        Int      @default(3215)
+  
+  // Data Utama
+  deskripsi       String?
+  luasTanah       Float?
+  tahunPerolehan  Int?
+  
+  // Lokasi
+  alamat          String?
+  desa            String?
+  kecamatan       String?
+  kabupaten       String?
+  provinsi        String?
+  koordinatX      Float
+  koordinatY      Float
+  jenisBangunan   JenisBangunan
+
+  // Legal / Sertifikasi
+  jenisDokumen           String?   // Hak Guna Bangunan, Hak Pakai, dll.
+  nomorSertifikat        String?
+  tanggalAwalSertifikat  DateTime?
+  tanggalAkhirSertifikat DateTime?
+  linkSertifikat         String?   // URL Softfile PDF
+
+  // Status Fisik
+  penguasaanTanah StatusPenguasaanTanah
+  
+  // Permasalahan
+  permasalahanAset PermasalahanAset
+
+  // Relasi
+  fotoAset        FotoAset[]
+
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  
+  @@map("aset_towers")
+}
+
+model FotoAset {
+  id          String    @id @default(uuid())
+  asetTowerId String
+  asetTower   AsetTower @relation(fields: [asetTowerId], references: [id], onDelete: Cascade)
+
+  url         String
+  kategori    String?   // TAMPAK DEPAN, SERTIFIKAT, dll.
+  deskripsi   String?
+  uploadedAt  DateTime  @default(now())
+
+  @@map("foto_asets")
+}
+
