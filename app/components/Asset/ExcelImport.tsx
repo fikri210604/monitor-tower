@@ -2,10 +2,17 @@
 
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, AlertTriangle } from "lucide-react";
+import { normalizeEnumValue, getFieldName } from "@/lib/excel/headers";
 
 interface ExcelImportProps {
     onImportSuccess: () => void;
+}
+
+interface ImportError {
+    row: number;
+    kodeSap?: any;
+    reason: string;
 }
 
 export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
@@ -13,10 +20,23 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [importErrors, setImportErrors] = useState<ImportError[]>([]);
+    const [importSummary, setImportSummary] = useState<{
+        successCount: number;
+        skippedCount: number;
+        errorCount: number;
+        totalRows: number;
+    } | null>(null);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Reset previous states
+        setError("");
+        setSuccess("");
+        setImportErrors([]);
+        setImportSummary(null);
 
         const reader = new FileReader();
         reader.onload = (evt) => {
@@ -26,24 +46,74 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             const ws = wb.Sheets[wsname];
             const rawData = XLSX.utils.sheet_to_json(ws);
 
-            // Normalize Keys
-            const normalizedData = rawData.map((row: any) => {
+            console.log("📋 Raw Excel data (first 3 rows):", rawData.slice(0, 3));
+
+            // Log ALL COLUMN NAMES from Excel
+            if (rawData.length > 0) {
+                const firstRow = rawData[0] as any;
+                const columnNames = Object.keys(firstRow);
+                console.log("📊 Excel Column Headers Found:", columnNames);
+                console.log("📊 Total columns:", columnNames.length);
+            }
+
+            // Helper: Normalize decimal separator (comma to dot)
+            const normalizeDecimal = (value: any): number | null => {
+                if (value === null || value === undefined || value === "") return null;
+
+                // If already a number, return it
+                if (typeof value === "number") return value;
+
+                // Convert to string and replace comma with dot
+                const strValue = String(value).trim().replace(",", ".");
+                const parsed = parseFloat(strValue);
+
+                return isNaN(parsed) ? null : parsed;
+            };
+
+            // Normalize Keys dan Values menggunakan helper dari lib
+            const normalizedData = rawData.map((row: any, index: number) => {
                 const newRow: any = {};
                 Object.keys(row).forEach((key) => {
-                    const cleanKey = key.trim().toUpperCase();
-                    if (cleanKey === "KODE SAP" || cleanKey === "KODESAP") newRow.kodeSap = row[key];
-                    else if (cleanKey === "UNIT") newRow.unit = row[key];
-                    else if (cleanKey === "ALAMAT" || cleanKey === "LOKASI") newRow.alamat = row[key];
-                    else if (cleanKey === "KOORDINAT X" || cleanKey === "LATITUDE" || cleanKey === "LAT") newRow.koordinatX = row[key];
-                    else if (cleanKey === "KOORDINAT Y" || cleanKey === "LONGITUDE" || cleanKey === "LONG") newRow.koordinatY = row[key];
-                    else if (cleanKey.includes("PENGUASAAN") || cleanKey.includes("STATUS TANAH")) newRow.penguasaanTanah = row[key];
-                    else if (cleanKey.includes("JENIS BANGUNAN")) newRow.jenisBangunan = row[key];
-                    else if (cleanKey.includes("PENYELESAIAN") || cleanKey.includes("SERTIFIKAT")) newRow.statusPenyelesaianAset = row[key];
-                    else newRow[key] = row[key]; // Keep original just in case
+                    const fieldName = getFieldName(key);
+
+                    if (fieldName) {
+                        // Numeric fields - normalize decimal separator
+                        if (fieldName === "koordinatX" || fieldName === "koordinatY") {
+                            newRow[fieldName] = normalizeDecimal(row[key]);
+                        } else if (fieldName === "luasTanah") {
+                            newRow[fieldName] = normalizeDecimal(row[key]);
+                        } else if (fieldName === "kodeSap" || fieldName === "kodeUnit" || fieldName === "tahunPerolehan") {
+                            const normalized = normalizeDecimal(row[key]);
+                            newRow[fieldName] = normalized ? Math.floor(normalized) : null; // Integer fields
+                        }
+                        // Enum fields - normalize enum values
+                        else if (fieldName === "jenisBangunan") {
+                            const normalized = normalizeEnumValue(row[key], "jenisBangunan");
+                            newRow[fieldName] = normalized || "TAPAK_TOWER";
+                        } else if (fieldName === "penguasaanTanah") {
+                            const normalized = normalizeEnumValue(row[key], "penguasaanTanah");
+                            newRow[fieldName] = normalized || "DIKUASAI";
+                        } else if (fieldName === "permasalahanAset") {
+                            const normalized = normalizeEnumValue(row[key], "permasalahanAset");
+                            newRow[fieldName] = normalized || "CLEAN_AND_CLEAR";
+                        }
+                        // Other fields - just copy
+                        else {
+                            newRow[fieldName] = row[key];
+                        }
+                    }
                 });
+
+                if (index === 0) {
+                    console.log(`🔍 Row 1 normalized (ALL FIELDS):`, newRow);
+                    console.log(`🔍 Has koordinatX?`, newRow.koordinatX);
+                    console.log(`🔍 Has koordinatY?`, newRow.koordinatY);
+                }
                 return newRow;
             });
 
+            console.log("✅ Normalized data (first 3 rows):", normalizedData.slice(0, 3));
+            console.log(`Total rows to import: ${normalizedData.length}`);
             setData(normalizedData);
             setError("");
         };
@@ -56,6 +126,11 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
         setLoading(true);
         setError("");
         setSuccess("");
+        setImportErrors([]);
+        setImportSummary(null);
+
+        console.log("🚀 Sending import request with", data.length, "rows");
+        console.log("First row sample:", data[0]);
 
         try {
             const response = await fetch("/api/assets/import", {
@@ -65,16 +140,36 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             });
 
             const result = await response.json();
+            console.log("📥 Import response:", result);
 
             if (!response.ok) {
-                throw new Error(result.error || "Import failed");
-            }
+                // All failed
+                setError(result.error || "Import failed");
+                if (result.errors && result.errors.length > 0) {
+                    setImportErrors(result.errors);
+                }
+            } else {
+                // Success or partial success
+                const { successCount, skippedCount, errorCount, totalRows, errors } = result;
 
-            setSuccess(`Berhasil mengimpor ${result.successCount} data aset.`);
-            setData([]); // Reset data
-            onImportSuccess();
+                setImportSummary({ successCount, skippedCount: skippedCount || 0, errorCount: errorCount || 0, totalRows });
+
+                if (errors && errors.length > 0) {
+                    setImportErrors(errors);
+                }
+
+                if (successCount > 0) {
+                    setSuccess(`Berhasil mengimpor ${successCount} dari ${totalRows} data aset.`);
+                    onImportSuccess();
+                }
+
+                if (successCount === 0) {
+                    setError(`Tidak ada data yang berhasil diimpor dari ${totalRows} baris.`);
+                }
+            }
         } catch (err: any) {
-            setError(err.message);
+            console.error("❌ Import error:", err);
+            setError(err.message || "Terjadi kesalahan saat import");
         } finally {
             setLoading(false);
         }
@@ -90,7 +185,7 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             </div>
 
             <p className="text-sm text-gray-500">
-                Unggah file Excel (.xlsx) dengan kolom: <code>kodeSap</code>, <code>unit</code>, <code>alamat</code>, <code>koordinatX</code>, <code>koordinatY</code>.
+                Unggah file Excel (.xlsx) dengan kolom wajib: <code>kodeSap</code>, <code>koordinatX</code>, <code>koordinatY</code>, <code>jenisBangunan</code>, <code>penguasaanTanah</code>, <code>permasalahanAset</code>.
             </p>
 
             <div className="relative">
@@ -106,7 +201,7 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                 </div>
             </div>
 
-            {data.length > 0 && (
+            {data.length > 0 && !importSummary && (
                 <div className="bg-blue-50 p-3 rounded-lg text-sm text-pln-blue flex items-center justify-between">
                     <span>{data.length} data siap diimpor.</span>
                     <button
@@ -119,17 +214,71 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                 </div>
             )}
 
-            {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 mt-0.5" />
-                    <span>{error}</span>
+            {/* Import Summary */}
+            {importSummary && importSummary.successCount > 0 && (
+                <div className="bg-blue-50 p-3 rounded-lg text-sm">
+                    <div className="flex items-start gap-2 text-pln-blue mb-2">
+                        <AlertTriangle className="w-4 h-4 mt-0.5" />
+                        <div className="flex-1">
+                            <p className="font-semibold">Ringkasan Import:</p>
+                            <ul className="mt-1 space-y-1 text-xs">
+                                <li>✅ Berhasil: {importSummary.successCount}</li>
+                                {importSummary.skippedCount > 0 && <li>⚠️ Dilewati: {importSummary.skippedCount}</li>}
+                                {importSummary.errorCount > 0 && <li>❌ Error: {importSummary.errorCount}</li>}
+                                <li>📊 Total: {importSummary.totalRows}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setData([]);
+                            setImportSummary(null);
+                            setImportErrors([]);
+                            setSuccess("");
+                        }}
+                        className="text-xs text-pln-blue underline mt-2"
+                    >
+                        Import file baru
+                    </button>
                 </div>
             )}
 
+            {/* General Error */}
+            {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+                    <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>{error}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Message */}
             {success && (
                 <div className="bg-green-50 text-green-600 p-3 rounded-lg text-sm flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 mt-0.5" />
                     <span>{success}</span>
+                </div>
+            )}
+
+            {/* Detailed Errors */}
+            {importErrors.length > 0 && (
+                <div className="bg-orange-50 p-3 rounded-lg text-sm">
+                    <div className="flex items-start gap-2 text-orange-700 mb-2">
+                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="font-semibold">Detail Error ({importErrors.length} baris):</p>
+                            <div className="mt-2 max-h-40 overflow-y-auto space-y-1">
+                                {importErrors.map((err, idx) => (
+                                    <div key={idx} className="text-xs bg-white p-2 rounded border border-orange-200">
+                                        <span className="font-medium">Baris {err.row}</span>
+                                        {err.kodeSap && <span className="text-gray-500"> (Kode SAP: {err.kodeSap})</span>}
+                                        <p className="text-orange-600 mt-1">{err.reason}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
