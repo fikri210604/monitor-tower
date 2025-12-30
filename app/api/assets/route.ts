@@ -46,50 +46,57 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Basic validation
-    if (!body.koordinatX || !body.koordinatY) {
-      return NextResponse.json({ error: "Koordinat X dan Y wajib diisi" }, { status: 400 });
-    }
+    // Helper: Normalize decimal separator and convert to number
+    const normalizeDecimal = (value: any): number | null => {
+      if (value === null || value === undefined || value === "") return null;
+
+      const raw = String(value).trim();
+      if (!raw || ["-", "N/A", "NULL"].includes(raw.toUpperCase())) return null;
+
+      // If already a number, return it
+      if (typeof value === "number") return value;
+
+      // Convert string: remove spaces, replace comma with dot
+      const strValue = String(value).trim().replace(/,/g, ".");
+      const parsed = parseFloat(strValue);
+
+      return isNaN(parsed) ? null : parsed;
+    };
 
     const newAsset = await prisma.asetTower.create({
       data: {
-        kodeSap: body.kodeSap,
-        kodeUnit: body.kodeUnit,
-        deskripsi: body.deskripsi,
-        luasTanah: body.luasTanah ? parseFloat(body.luasTanah) : null,
-        tahunPerolehan: body.tahunPerolehan ? parseInt(body.tahunPerolehan) : null,
-
-        // Location
-        alamat: body.alamat,
-        desa: body.desa,
-        kecamatan: body.kecamatan,
-        kabupaten: body.kabupaten,
-        provinsi: body.provinsi,
-        koordinatX: Number(body.koordinatX),
-        koordinatY: Number(body.koordinatY),
-
-        // Legal
-        jenisDokumen: body.jenisDokumen,
-        nomorSertifikat: body.nomorSertifikat,
-        linkSertifikat: body.linkSertifikat,
+        kodeSap: typeof body.kodeSap === "string" ? parseInt(body.kodeSap, 10) : (body.kodeSap || 10100),
+        kodeUnit: typeof body.kodeUnit === "string" ? parseInt(body.kodeUnit, 10) : (body.kodeUnit || 3215),
+        deskripsi: body.deskripsi || null,
+        luasTanah: normalizeDecimal(body.luasTanah),
+        tahunPerolehan: body.tahunPerolehan ? parseInt(String(body.tahunPerolehan), 10) : null,
+        alamat: body.alamat || null,
+        desa: body.desa || null,
+        kecamatan: body.kecamatan || null,
+        kabupaten: body.kabupaten || null,
+        provinsi: body.provinsi || null,
+        koordinatX: normalizeDecimal(body.koordinatX) as number,
+        koordinatY: normalizeDecimal(body.koordinatY) as number,
+        jenisDokumen: body.jenisDokumen || null,
+        nomorSertifikat: body.nomorSertifikat || null,
+        linkSertifikat: body.linkSertifikat || null,
         tanggalAwalSertifikat: body.tanggalAwalSertifikat ? new Date(body.tanggalAwalSertifikat) : null,
         tanggalAkhirSertifikat: body.tanggalAkhirSertifikat ? new Date(body.tanggalAkhirSertifikat) : null,
-
-        // Physical & Issues
         penguasaanTanah: body.penguasaanTanah,
         jenisBangunan: body.jenisBangunan,
         permasalahanAset: body.permasalahanAset,
-
-        // Foto Relation
-        fotoAset: {
-          create: [
-            ...(body.fotoUrl ? [{ url: body.fotoUrl, kategori: "TAMPAK DEPAN", deskripsi: "Foto Aset Utama" }] : []),
-          ]
-        }
+        fotoAset: body.fotoAset
+          ? {
+            create: body.fotoAset.map((url: string) => ({
+              url,
+              keterangan: null,
+            })),
+          }
+          : undefined,
       },
       include: {
-        fotoAset: true
-      }
+        fotoAset: true,
+      },
     });
 
     const serializedAsset = JSON.parse(JSON.stringify(newAsset, (key, value) =>

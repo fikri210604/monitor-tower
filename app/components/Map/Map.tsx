@@ -4,6 +4,8 @@ import { MapContainer, TileLayer, Marker, Popup, LayersControl } from "react-lea
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect } from "react";
+import { TowerControl } from "lucide-react";
+import { renderToString } from "react-dom/server";
 
 // Fix deafult marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -32,11 +34,56 @@ interface MapProps {
 export default function Map({ markers, center = [-4.852055, 104.862938], zoom = 6 }: MapProps) {
     // Center map on Lampung by default based on seed data
 
-    const towerIcon = new L.Icon({
-        iconUrl: '/tower-marker.svg',
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
-        popupAnchor: [0, -40],
+    // Debug: Log markers data
+    console.log("📍 Map received markers:", markers.length);
+    console.log("📍 First marker sample:", markers[0]);
+
+    // Filter valid markers (must have both coordinates as numbers)
+    const validMarkers = markers.filter(m => {
+        const hasCoords = m.koordinatX && m.koordinatY;
+        const isValid = typeof m.koordinatX === 'number' && typeof m.koordinatY === 'number';
+
+        if (!hasCoords) {
+            console.warn(`⚠️  Marker ${m.kodeSap} missing coordinates:`, m);
+        } else if (!isValid) {
+            console.warn(`⚠️  Marker ${m.kodeSap} has invalid coordinate types:`,
+                typeof m.koordinatX, typeof m.koordinatY, m);
+        }
+
+        return hasCoords && isValid;
+    });
+
+    console.log(`✅ Valid markers to display: ${validMarkers.length}/${markers.length}`);
+    if (validMarkers.length > 0) {
+        console.log("📍 Sample valid marker:", validMarkers[0]);
+
+        // Check coordinate ranges
+        const xCoords = validMarkers.map(m => m.koordinatX);
+        const yCoords = validMarkers.map(m => m.koordinatY);
+
+        const xMin = Math.min(...xCoords);
+        const xMax = Math.max(...xCoords);
+        const yMin = Math.min(...yCoords);
+        const yMax = Math.max(...yCoords);
+
+        console.log("📊 Coordinate X range:", xMin, "to", xMax);
+        console.log("📊 Coordinate Y range:", yMin, "to", yMax);
+        console.log("📍 First 5 coordinates:", validMarkers.slice(0, 5).map(m =>
+            `${m.kodeSap}: [${m.koordinatY}, ${m.koordinatX}]`
+        ));
+    }
+
+    // Render TowerControl as HTML string for Leaflet DivIcon
+    const towerIconHtml = renderToString(
+        <TowerControl size={32} color="#0066cc" strokeWidth={2} />
+    );
+
+    const towerIcon = new L.DivIcon({
+        html: `<div style="display: flex; align-items: center; justify-content: center;">${towerIconHtml}</div>`,
+        className: 'custom-tower-icon',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32],
     });
 
     return (
@@ -56,7 +103,7 @@ export default function Map({ markers, center = [-4.852055, 104.862938], zoom = 
                     />
                 </LayersControl.BaseLayer>
             </LayersControl>
-            {markers.map((marker) => (
+            {validMarkers.map((marker) => (
                 <Marker key={marker.id} position={[marker.koordinatY, marker.koordinatX]} icon={towerIcon}>
                     <Popup>
                         <div className="text-sm">

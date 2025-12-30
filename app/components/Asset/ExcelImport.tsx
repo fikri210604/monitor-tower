@@ -17,6 +17,8 @@ interface ImportError {
 
 export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
     const [data, setData] = useState<any[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const [replaceAll, setReplaceAll] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -44,15 +46,61 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             const wb = XLSX.read(bstr, { type: "binary" });
             const wsname = wb.SheetNames[0];
             const ws = wb.Sheets[wsname];
-            const rawData = XLSX.utils.sheet_to_json(ws);
 
-            console.log("📋 Raw Excel data (first 3 rows):", rawData.slice(0, 3));
+            // First, read as array of arrays to find header row
+            const sheetData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
 
-            // Log ALL COLUMN NAMES from Excel
+            console.log("📄 First 5 rows of Excel (raw):", sheetData.slice(0, 5));
+
+            // Find the header row - look for known columns like "koordinat", "kode", etc.
+            let headerRowIndex = -1;
+            let headerRow: any[] = [];
+
+            for (let i = 0; i < Math.min(10, sheetData.length); i++) {
+                const row = sheetData[i] as any[];
+                if (!row || row.length === 0) continue; // Skip empty rows
+                const rowStr = JSON.stringify(row).toLowerCase();
+
+                // Check if this row contains header-like content
+                if (rowStr.includes("koordinat") ||
+                    rowStr.includes("titik") ||
+                    rowStr.includes("kode") ||
+                    rowStr.includes("latitude") ||
+                    rowStr.includes("longitude")) {
+                    headerRowIndex = i;
+                    headerRow = row;
+                    console.log(`✅ Found header row at index ${i}:`, row);
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                alert("❌ Tidak dapat menemukan header row di Excel. Pastikan ada kolom 'Titik Koordinat' atau 'Kode'");
+                return;
+            }
+
+            // Parse data rows (skip header and rows before it)
+            const dataRows = sheetData.slice(headerRowIndex + 1) as any[][];
+
+            // Convert array of arrays to array of objects using detected headers
+            const rawData = dataRows.map(row => {
+                const obj: any = {};
+                headerRow.forEach((header, index) => {
+                    if (header && header.toString().trim()) { // Only if header is not empty
+                        obj[header] = row[index];
+                    }
+                });
+                return obj;
+            });
+
+            console.log("📋 Raw Excel data with correct headers (first 3 rows):", rawData.slice(0, 3));
+
+            // Log column names
             if (rawData.length > 0) {
                 const firstRow = rawData[0] as any;
                 const columnNames = Object.keys(firstRow);
-                console.log("📊 Excel Column Headers Found:", columnNames);
+
+                console.log("📊 Excel Column Headers:", columnNames);
                 console.log("📊 Total columns:", columnNames.length);
             }
 
@@ -60,12 +108,55 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             const normalizeDecimal = (value: any): number | null => {
                 if (value === null || value === undefined || value === "") return null;
 
+                const raw = String(value).trim();
+                if (!raw || ["-", "N/A", "NULL"].includes(raw.toUpperCase())) return null;
+
                 // If already a number, return it
                 if (typeof value === "number") return value;
 
-                // Convert to string and replace comma with dot
-                const strValue = String(value).trim().replace(",", ".");
+                let strValue = String(value).trim().replace(/\s/g, "");
+
+                // Smart detect: which is decimal separator?
+                const hasComma = strValue.includes(",");
+                const hasDot = strValue.includes(".");
+
+                if (hasComma && hasDot) {
+                    // Both present: check which one comes last (that's the decimal separator)
+                    const lastCommaIndex = strValue.lastIndexOf(",");
+                    const lastDotIndex = strValue.lastIndexOf(".");
+
+                    if (lastCommaIndex > lastDotIndex) {
+                        // Indonesian format: 1.234,56 → remove dots, replace comma with dot
+                        strValue = strValue.replace(/\./g, "").replace(",", ".");
+                    } else {
+                        // International format: 1,234.56 → remove commas
+                        strValue = strValue.replace(/,/g, "");
+                    }
+                } else if (hasComma) {
+                    // Only comma: assume it's decimal separator
+                    strValue = strValue.replace(",", ".");
+                } else if (hasDot) {
+                    // Only dot: check if it's thousand separator or decimal
+                    // If more than one dot, it's thousand separator
+                    const dotCount = (strValue.match(/\./g) || []).length;
+                    if (dotCount > 1) {
+                        // Multiple dots = thousand separator: remove all
+                        strValue = strValue.replace(/\./g, "");
+                    }
+                    // Single dot = decimal separator, keep it
+                }
+
                 const parsed = parseFloat(strValue);
+
+                // Validate coordinate range for koordinatX/Y
+                if (!isNaN(parsed)) {
+                    // Coordinates should be valid geographic values
+                    // Indonesia roughly: latitude -11 to 6, longitude 95 to 141
+                    // But we'll be lenient: -90 to 90, -180 to 180
+                    if (Math.abs(parsed) > 200) {
+                        console.warn(`⚠️  Suspicious coordinate value: ${value} → ${parsed}`);
+                    }
+                }
 
                 return isNaN(parsed) ? null : parsed;
             };
@@ -84,7 +175,7 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                             newRow[fieldName] = normalizeDecimal(row[key]);
                         } else if (fieldName === "kodeSap" || fieldName === "kodeUnit" || fieldName === "tahunPerolehan") {
                             const normalized = normalizeDecimal(row[key]);
-                            newRow[fieldName] = normalized ? Math.floor(normalized) : null; // Integer fields
+                            newRow[fieldName] = normalized !== null ? Math.floor(normalized) : null; // Integer fields
                         }
                         // Enum fields - normalize enum values
                         else if (fieldName === "jenisBangunan") {
@@ -123,6 +214,16 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
     const handleImport = async () => {
         if (data.length === 0) return;
 
+        // Confirmation for replace all
+        if (replaceAll) {
+            const confirmed = confirm(
+                `⚠️ PERINGATAN!\n\nAnda akan MENGHAPUS SEMUA ${data.length} data aset yang ada dan menggantinya dengan data baru dari Excel.\n\nApakah Anda yakin ingin melanjutkan?`
+            );
+            if (!confirmed) {
+                return;
+            }
+        }
+
         setLoading(true);
         setError("");
         setSuccess("");
@@ -131,18 +232,22 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
 
         console.log("🚀 Sending import request with", data.length, "rows");
         console.log("First row sample:", data[0]);
+        console.log("Replace all mode:", replaceAll);
 
         try {
-            const response = await fetch("/api/assets/import", {
+            const res = await fetch("/api/assets/import", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data }),
+                body: JSON.stringify({
+                    rows: data,
+                    replaceAll: replaceAll
+                }),
             });
 
-            const result = await response.json();
+            const result = await res.json();
             console.log("📥 Import response:", result);
 
-            if (!response.ok) {
+            if (!res.ok) {
                 // All failed
                 setError(result.error || "Import failed");
                 if (result.errors && result.errors.length > 0) {
@@ -176,17 +281,34 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
-            <div className="flex items-center gap-3 mb-2">
-                <div className="bg-green-100 p-2 rounded-lg text-green-600">
-                    <FileSpreadsheet className="w-5 h-5" />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-lg font-bold text-gray-800">Import dari Excel</h2>
+                    <p className="text-gray-500 text-sm mt-1">Upload file Excel (.xlsx) untuk import data aset</p>
                 </div>
-                <h3 className="font-semibold text-gray-800">Import Excel</h3>
             </div>
 
-            <p className="text-sm text-gray-500">
-                Unggah file Excel (.xlsx) dengan kolom wajib: <code>kodeSap</code>, <code>koordinatX</code>, <code>koordinatY</code>, <code>jenisBangunan</code>, <code>penguasaanTanah</code>, <code>permasalahanAset</code>.
-            </p>
+            {/* Replace All Checkbox */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={replaceAll}
+                        onChange={(e) => setReplaceAll(e.target.checked)}
+                        className="mt-1 w-4 h-4 text-pln-blue border-gray-300 rounded focus:ring-pln-blue"
+                    />
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-amber-800 text-sm">Ganti Semua Data</span>
+                            <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        </div>
+                        <p className="text-xs text-amber-700 mt-1">
+                            Centang ini akan <strong>menghapus semua data aset yang ada</strong> dan menggantinya dengan data baru dari Excel. Gunakan fitur ini untuk re-import dengan data yang sudah diperbaiki.
+                        </p>
+                    </div>
+                </label>
+            </div>
 
             <div className="relative">
                 <input

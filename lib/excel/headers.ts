@@ -161,10 +161,14 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
     "PROVINSI": "provinsi",
 
     // Koordinat X (Latitude)
-    "Titik Koordinat (X)": "koordinatX",
+    "TITIK KOORDINAT (X)": "koordinatX",
+    "TITIKKOORDINAT(X)": "koordinatX",
+    "TITIK KOORDINAT X": "koordinatX",
 
     // Koordinat Y (Longitude)
-    "Titik Koordinat (Y)": "koordinatY",
+    "TITIK KOORDINAT (Y)": "koordinatY",
+    "TITIKKOORDINAT(Y)": "koordinatY",
+    "TITIK KOORDINAT Y": "koordinatY",
 
     // Jenis Dokumen
     "JENIS DOKUMEN": "jenisDokumen",
@@ -215,11 +219,16 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
  * @returns Nama field database atau null jika tidak dikenali
  */
 export function getFieldName(columnName: string): string | null {
+    // Skip __EMPTY_ columns silently (these are unnamed Excel columns)
+    if (columnName.startsWith("__EMPTY")) {
+        return null;
+    }
+
     const normalized = columnName.trim().toUpperCase();
     const result = COLUMN_MAPPINGS[normalized] || null;
 
     if (!result) {
-        console.warn(`⚠️  No column mapping for: "${columnName}" (normalized: "${normalized}")`);
+        // console.warn(`⚠️  No column mapping for: "${columnName}" (normalized: "${normalized}")`);
     } else {
         console.log(`✅ Mapped column: "${columnName}" → ${result}`);
     }

@@ -10,16 +10,24 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { data } = await req.json();
+    const { rows, replaceAll } = await req.json();
 
-    console.log("📥 Received import request with", data?.length || 0, "rows");
+    console.log("📥 Received import request with", rows?.length || 0, "rows");
+    console.log("🔄 Replace all mode:", replaceAll);
 
-    if (!Array.isArray(data)) {
-      return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
+    if (!Array.isArray(rows)) {
+      return NextResponse.json({ error: "Invalid data format - expected 'rows' array" }, { status: 400 });
     }
 
-    if (data.length === 0) {
+    if (rows.length === 0) {
       return NextResponse.json({ error: "No data to import" }, { status: 400 });
+    }
+
+    // If replaceAll is true, delete all existing assets
+    if (replaceAll) {
+      console.log("🗑️  Deleting all existing assets...");
+      const deleteResult = await prisma.asetTower.deleteMany({});
+      console.log(`✅ Deleted ${deleteResult.count} existing assets`);
     }
 
     let successCount = 0;
@@ -27,8 +35,8 @@ export async function POST(req: NextRequest) {
     let errorCount = 0;
     let errors: Array<{ row: number, kodeSap?: any, reason: string }> = [];
 
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
+    for (let i = 0; i < rows.length; i++) {
+      const item = rows[i];
       const rowNumber = i + 1;
 
       try {
