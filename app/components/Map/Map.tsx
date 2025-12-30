@@ -32,6 +32,13 @@ interface MapProps {
 export default function Map({ markers, center = [-4.852055, 104.862938], zoom = 6 }: MapProps) {
     // Center map on Lampung by default based on seed data
 
+    const towerIcon = new L.Icon({
+        iconUrl: '/tower-marker.svg',
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40],
+    });
+
     return (
         <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} className="h-full w-full rounded-xl z-0">
             <LayersControl position="topright">
@@ -50,7 +57,7 @@ export default function Map({ markers, center = [-4.852055, 104.862938], zoom = 
                 </LayersControl.BaseLayer>
             </LayersControl>
             {markers.map((marker) => (
-                <Marker key={marker.id} position={[marker.koordinatY, marker.koordinatX]}>
+                <Marker key={marker.id} position={[marker.koordinatY, marker.koordinatX]} icon={towerIcon}>
                     <Popup>
                         <div className="text-sm">
                             <h3 className="font-bold text-pln-blue">{marker.kodeSap}</h3>
