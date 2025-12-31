@@ -46,6 +46,14 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Check role - only Super Admin can update assets
+    if ((session.user as any).role !== "SUPER_ADMIN") {
+        return NextResponse.json(
+            { error: "Forbidden: Only Super Admin can update assets" },
+            { status: 403 }
+        );
+    }
+
     const { id } = await params;
     const body = await req.json();
 
@@ -99,6 +107,14 @@ export async function DELETE(
 ) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Check role - only Super Admin can delete assets
+    if ((session.user as any).role !== "SUPER_ADMIN") {
+        return NextResponse.json(
+            { error: "Forbidden: Only Super Admin can delete assets" },
+            { status: 403 }
+        );
+    }
 
     const { id } = await params;
 

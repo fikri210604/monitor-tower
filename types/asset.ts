@@ -36,6 +36,7 @@ export interface AssetTableProps {
     onDelete: (id: string) => void;
     onEdit: (asset: Asset) => void;
     onLocate: (asset: Asset) => void;
+    userRole?: string; // Add userRole for conditional rendering
 }
 
 export type SortField = keyof Asset | 'lokasi' | null;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useSession } from "next-auth/react";
 import ExcelImport from "@/app/components/Asset/ExcelImport";
 import AssetTable from "@/app/components/Asset/AssetTable";
 import AssetFormModal from "@/app/components/Asset/AssetFormModal";
@@ -15,6 +16,9 @@ const Map = dynamic(() => import("@/app/components/Map"), {
 });
 
 export default function AssetsPage() {
+    const { data: session } = useSession();
+    const isSuperAdmin = (session?.user as any)?.role === "SUPER_ADMIN";
+
     const [assets, setAssets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showImport, setShowImport] = useState(false);
@@ -130,20 +134,24 @@ export default function AssetsPage() {
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
-                    <button
-                        onClick={() => setShowImport(!showImport)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showImport ? "bg-gray-200 text-gray-700" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
-                            }`}
-                    >
-                        {showImport ? "Tutup Import" : "Import Excel"}
-                    </button>
-                    <button
-                        onClick={handleCreate}
-                        className="flex items-center gap-2 px-4 py-2 bg-pln-blue text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm font-medium"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Tambah Manual
-                    </button>
+                    {isSuperAdmin && (
+                        <>
+                            <button
+                                onClick={() => setShowImport(!showImport)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showImport ? "bg-gray-200 text-gray-700" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                                    }`}
+                            >
+                                {showImport ? "Tutup Import" : "Import Excel"}
+                            </button>
+                            <button
+                                onClick={handleCreate}
+                                className="flex items-center gap-2 px-4 py-2 bg-pln-blue text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm font-medium"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Tambah Manual
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -203,7 +211,13 @@ export default function AssetsPage() {
             {/* Full Table Section */}
             <div>
                 <h3 className="font-bold text-gray-800 mb-4 text-lg">Daftar Aset Lengkap</h3>
-                <AssetTable assets={assets} onDelete={handleDelete} onEdit={handleEdit} onLocate={handleLocate} />
+                <AssetTable
+                    assets={assets}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    onLocate={handleLocate}
+                    userRole={(session?.user as any)?.role}
+                />
             </div>
 
             {/* Modal */}

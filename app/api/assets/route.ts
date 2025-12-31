@@ -43,6 +43,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Check role - only Super Admin can create assets
+  if ((session.user as any).role !== "SUPER_ADMIN") {
+    return NextResponse.json(
+      { error: "Forbidden: Only Super Admin can create assets" },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await req.json();
 

@@ -1,42 +1,39 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Edit, Trash2 } from "lucide-react";
 import { useEffect } from "react";
-import { AssetTableProps, SortField, SortOrder } from "@/types/asset";
-import { useTableFilters } from "@/hooks/useTableFilters";
-import { useTableSort } from "@/hooks/useTableSort";
+import { UserTableProps, UserSortField, SortOrder, User } from "@/types/user";
+import { useUserTableFilters } from "@/hooks/useUserTableFilters";
+import { useUserTableSort } from "@/hooks/useUserTableSort";
 import { usePagination } from "@/hooks/usePagination";
-import AssetTableRow from "./AssetTableRow";
-import { DEFAULT_ITEMS_PER_PAGE, ITEMS_PER_PAGE_OPTIONS, SEARCH_PLACEHOLDER, ALL_STATUS_FILTER_LABEL } from "@/constants/table";
+import { DEFAULT_ITEMS_PER_PAGE, ITEMS_PER_PAGE_OPTIONS } from "@/constants/table";
 
 /* =========================
    Main Component
 ========================= */
-export default function AssetTable({
-    assets,
+export default function UserTable({
+    users,
     onDelete,
     onEdit,
-    onLocate,
-    userRole,
-}: AssetTableProps) {
+}: UserTableProps) {
     // Use custom hooks
     const {
         searchQuery,
         setSearchQuery,
-        statusFilter,
-        setStatusFilter,
-        uniqueStatuses,
-        filteredAssets,
+        roleFilter,
+        setRoleFilter,
+        uniqueRoles,
+        filteredUsers,
         hasActiveFilters,
         resetFilters,
-    } = useTableFilters(assets);
+    } = useUserTableFilters(users);
 
     const {
         sortField,
         sortOrder,
-        sortedAssets,
+        sortedUsers,
         handleSort,
-    } = useTableSort(filteredAssets);
+    } = useUserTableSort(filteredUsers);
 
     const {
         currentPage,
@@ -50,20 +47,19 @@ export default function AssetTable({
         prevPage,
         changeItemsPerPage,
         resetToFirstPage,
-    } = usePagination(sortedAssets, DEFAULT_ITEMS_PER_PAGE);
+    } = usePagination(sortedUsers, DEFAULT_ITEMS_PER_PAGE);
 
     // Reset to page 1 when filters or sorting changes
     useEffect(() => {
         resetToFirstPage();
-    }, [searchQuery, statusFilter, sortField, sortOrder]);
+    }, [searchQuery, roleFilter, sortField, sortOrder]);
 
-    // Handlers with pagination reset
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
     };
 
-    const handleStatusFilterChange = (value: string) => {
-        setStatusFilter(value);
+    const handleRoleFilterChange = (value: string) => {
+        setRoleFilter(value);
     };
 
     return (
@@ -76,24 +72,24 @@ export default function AssetTable({
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder={SEARCH_PLACEHOLDER}
+                            placeholder="Cari nama atau username..."
                             value={searchQuery}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue"
                         />
                     </div>
 
-                    {/* Status Filter */}
+                    {/* Role Filter */}
                     <div className="flex items-center gap-2 min-w-[200px]">
                         <Filter className="w-4 h-4 text-gray-400" />
                         <select
-                            value={statusFilter}
-                            onChange={(e) => handleStatusFilterChange(e.target.value)}
+                            value={roleFilter}
+                            onChange={(e) => handleRoleFilterChange(e.target.value)}
                             className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue"
                         >
-                            <option value="all">{ALL_STATUS_FILTER_LABEL}</option>
-                            {uniqueStatuses.map(status => (
-                                <option key={status} value={status}>{status}</option>
+                            <option value="all">Semua Role</option>
+                            {uniqueRoles.map(role => (
+                                <option key={role} value={role}>{role}</option>
                             ))}
                         </select>
                     </div>
@@ -108,9 +104,9 @@ export default function AssetTable({
                                 Pencarian: "{searchQuery}"
                             </span>
                         )}
-                        {statusFilter !== "all" && (
+                        {roleFilter !== "all" && (
                             <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md">
-                                Status: {statusFilter}
+                                Role: {roleFilter}
                             </span>
                         )}
                         <button
@@ -128,16 +124,10 @@ export default function AssetTable({
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-500 font-medium whitespace-nowrap">
                         <tr>
-                            <SortableHeader field="kodeSap" label="Kode SAP" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="deskripsi" label="Deskripsi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="luasTanah" label="Luas (m²)" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="tahunPerolehan" label="Tahun" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <th className="px-4 py-3">Alamat</th>
-                            <SortableHeader field="lokasi" label="Lokasi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="jenisDokumen" label="Dokumen" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="nomorSertifikat" label="Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="permasalahanAset" label="Masalah" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <th className="px-4 py-3 text-center">Foto</th>
+                            <SortableHeader field="name" label="Nama" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="username" label="Username" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="role" label="Role" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="createdAt" label="Dibuat Pada" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <th className="px-4 py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -145,21 +135,19 @@ export default function AssetTable({
                     <tbody className="divide-y divide-gray-100">
                         {paginatedItems.length === 0 ? (
                             <tr>
-                                <td colSpan={11} className="px-4 py-8 text-center text-gray-400">
+                                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
                                     {hasActiveFilters
                                         ? "Tidak ada data yang sesuai dengan filter."
-                                        : "Belum ada data aset."}
+                                        : "Belum ada data user."}
                                 </td>
                             </tr>
                         ) : (
-                            paginatedItems.map((asset) => (
-                                <AssetTableRow
-                                    key={asset.id}
-                                    asset={asset}
+                            paginatedItems.map((user) => (
+                                <UserTableRow
+                                    key={user.id}
+                                    user={user}
                                     onDelete={onDelete}
                                     onEdit={onEdit}
-                                    onLocate={onLocate}
-                                    userRole={userRole}
                                 />
                             ))
                         )}
@@ -168,14 +156,14 @@ export default function AssetTable({
             </div>
 
             {/* Pagination Controls */}
-            {sortedAssets.length > 0 && (
+            {sortedUsers.length > 0 && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         {/* Left: Info */}
                         <div className="text-sm text-gray-600">
-                            Menampilkan <span className="font-semibold text-gray-800">{startIndex + 1}</span> - <span className="font-semibold text-gray-800">{Math.min(endIndex, sortedAssets.length)}</span> dari <span className="font-semibold text-gray-800">{sortedAssets.length}</span> data
+                            Menampilkan <span className="font-semibold text-gray-800">{startIndex + 1}</span> - <span className="font-semibold text-gray-800">{Math.min(endIndex, sortedUsers.length)}</span> dari <span className="font-semibold text-gray-800">{sortedUsers.length}</span> data
                             {hasActiveFilters && (
-                                <span className="ml-1 text-gray-500">(dari {assets.length} total)</span>
+                                <span className="ml-1 text-gray-500">(dari {users.length} total)</span>
                             )}
                         </div>
 
@@ -191,7 +179,6 @@ export default function AssetTable({
                             </button>
 
                             <div className="flex items-center gap-1">
-                                {/* Show page numbers (max 5) */}
                                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                     let pageNum;
                                     if (totalPages <= 5) {
@@ -259,11 +246,11 @@ function SortableHeader({
     sortOrder,
     onSort
 }: {
-    field: SortField;
+    field: UserSortField;
     label: string;
-    sortField: SortField;
+    sortField: UserSortField;
     sortOrder: SortOrder;
-    onSort: (field: SortField) => void;
+    onSort: (field: UserSortField) => void;
 }) {
     const isActive = sortField === field;
 
@@ -281,9 +268,81 @@ function SortableHeader({
                         <ArrowDown className="w-3.5 h-3.5 text-pln-blue" />
                     )
                 ) : (
-                    <ArrowUpDown className="w-3.5 h-3.5 opacity-0 opacity-50 transition-opacity" />
+                    <ArrowUpDown className="w-3.5 h-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
                 )}
             </button>
         </th>
+    );
+}
+
+/* =========================
+   User Table Row Component
+========================= */
+function UserTableRow({
+    user,
+    onDelete,
+    onEdit,
+}: {
+    user: User;
+    onDelete: (id: string) => void;
+    onEdit: (user: User) => void;
+}) {
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString("id-ID", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+        });
+    };
+
+    const getRoleBadge = (role: string) => {
+        const colors = {
+            SUPER_ADMIN: "bg-red-100 text-red-700",
+            OPERATOR: "bg-blue-100 text-blue-700",
+        };
+
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${colors[role as keyof typeof colors]}`}>
+                {role}
+            </span>
+        );
+    };
+
+    return (
+        <tr className="hover:bg-gray-50/50 transition-colors">
+            <td className="px-4 py-3 font-semibold text-gray-800">
+                {user.name}
+            </td>
+
+            <td className="px-4 py-3 text-gray-600 font-medium">
+                {user.username}
+            </td>
+
+            <td className="px-4 py-3">
+                {getRoleBadge(user.role)}
+            </td>
+
+            <td className="px-4 py-3 text-gray-500 text-xs">
+                {formatDate(user.createdAt)}
+            </td>
+
+            <td className="px-4 py-3 flex justify-end gap-2">
+                <button
+                    title="Edit"
+                    onClick={() => onEdit(user)}
+                    className="p-1.5 rounded-lg transition-colors text-gray-500 hover:bg-gray-100"
+                >
+                    <Edit className="w-4 h-4" />
+                </button>
+
+                <button
+                    title="Hapus"
+                    onClick={() => onDelete(user.id)}
+                    className="p-1.5 rounded-lg transition-colors text-red-500 hover:bg-red-50"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </td>
+        </tr>
     );
 }

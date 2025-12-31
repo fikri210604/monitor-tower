@@ -9,6 +9,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Check role - only Super Admin can import assets
+  if ((session.user as any).role !== "SUPER_ADMIN") {
+    return NextResponse.json(
+      { error: "Forbidden: Only Super Admin can import assets" },
+      { status: 403 }
+    );
+  }
+
   try {
     const { rows, replaceAll } = await req.json();
 
@@ -40,35 +48,18 @@ export async function POST(req: NextRequest) {
       const rowNumber = i + 1;
 
       try {
-        // ============================================
-        // DEFAULT VALUES & AUTO-GENERATION
-        // ============================================
-
-        // Auto-generate kodeSap if missing (use row number + base value)
+        // Auto-generate kodeSap if missing
         if (!item.kodeSap) {
           item.kodeSap = 10000 + rowNumber;
           console.log(`📝 Auto-generated kodeSap for row ${rowNumber}: ${item.kodeSap}`);
         }
 
-        // Set default enum values if missing or invalid
-        if (!item.jenisBangunan) {
-          item.jenisBangunan = "TAPAK_TOWER";
-          console.log(`📝 Using default jenisBangunan for row ${rowNumber}: TAPAK_TOWER`);
-        }
+        // Set default enum values
+        if (!item.jenisBangunan) item.jenisBangunan = "TAPAK_TOWER";
+        if (!item.penguasaanTanah) item.penguasaanTanah = "DIKUASAI";
+        if (!item.permasalahanAset) item.permasalahanAset = "CLEAN_AND_CLEAR";
 
-        if (!item.penguasaanTanah) {
-          item.penguasaanTanah = "DIKUASAI";
-          console.log(`📝 Using default penguasaanTanah for row ${rowNumber}: DIKUASAI`);
-        }
-
-        if (!item.permasalahanAset) {
-          item.permasalahanAset = "CLEAN_AND_CLEAR";
-          console.log(`📝 Using default permasalahanAset for row ${rowNumber}: CLEAN_AND_CLEAR`);
-        }
-
-        // ============================================
-        // REQUIRED FIELDS VALIDATION (Only coordinates!)
-        // ============================================
+        // Required fields validation
         const missingFields = [];
         if (!item.koordinatX) missingFields.push("koordinatX");
         if (!item.koordinatY) missingFields.push("koordinatY");
@@ -81,30 +72,14 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // ============================================
-        // ENUM VALIDATION & AUTO-CORRECTION
-        // ============================================
+        // Enum validation
         const validJenisBangunan = ["GARDU_INDUK", "TAPAK_TOWER"];
         const validPenguasaanTanah = ["DIKUASAI", "TIDAK_DIKUASAI"];
         const validPermasalahanAset = ["CLEAN_AND_CLEAR", "TUMPAK_TINDIH"];
 
-        // Auto-correct invalid enum values instead of rejecting
-        if (!validJenisBangunan.includes(item.jenisBangunan)) {
-          console.warn(`⚠️  Row ${rowNumber}: Invalid jenisBangunan "${item.jenisBangunan}", using default: TAPAK_TOWER`);
-          item.jenisBangunan = "TAPAK_TOWER";
-        }
-
-        if (!validPenguasaanTanah.includes(item.penguasaanTanah)) {
-          console.warn(`⚠️  Row ${rowNumber}: Invalid penguasaanTanah "${item.penguasaanTanah}", using default: DIKUASAI`);
-          item.penguasaanTanah = "DIKUASAI";
-        }
-
-        if (!validPermasalahanAset.includes(item.permasalahanAset)) {
-          console.warn(`⚠️  Row ${rowNumber}: Invalid permasalahanAset "${item.permasalahanAset}", using default: CLEAN_AND_CLEAR`);
-          item.permasalahanAset = "CLEAN_AND_CLEAR";
-        }
-
-        console.log(`✅ Row ${rowNumber} (KodeSap: ${item.kodeSap}): Valid, attempting to save...`);
+        if (!validJenisBangunan.includes(item.jenisBangunan)) item.jenisBangunan = "TAPAK_TOWER";
+        if (!validPenguasaanTanah.includes(item.penguasaanTanah)) item.penguasaanTanah = "DIKUASAI";
+        if (!validPermasalahanAset.includes(item.permasalahanAset)) item.permasalahanAset = "CLEAN_AND_CLEAR";
 
         await prisma.asetTower.create({
           data: {
@@ -113,7 +88,6 @@ export async function POST(req: NextRequest) {
             deskripsi: item.deskripsi || null,
             luasTanah: item.luasTanah ? parseFloat(item.luasTanah) : null,
             tahunPerolehan: item.tahunPerolehan ? parseInt(item.tahunPerolehan) : null,
-
             alamat: item.alamat || null,
             desa: item.desa || null,
             kecamatan: item.kecamatan || null,
@@ -121,37 +95,29 @@ export async function POST(req: NextRequest) {
             provinsi: item.provinsi || "LAMPUNG",
             koordinatX: parseFloat(item.koordinatX),
             koordinatY: parseFloat(item.koordinatY),
-
             jenisDokumen: item.jenisDokumen || null,
             nomorSertifikat: item.nomorSertifikat || null,
-
-            // Enum sudah divalidasi di atas
             penguasaanTanah: item.penguasaanTanah,
             jenisBangunan: item.jenisBangunan,
             permasalahanAset: item.permasalahanAset,
           }
         });
 
-        console.log(`✅ Row ${rowNumber} (KodeSap: ${item.kodeSap}): Successfully saved!`);
         successCount++;
       } catch (error: any) {
         errorCount++;
         const reason = error.message || "Database error";
-        console.error(`❌ Row ${rowNumber} (KodeSap: ${item.kodeSap || "N/A"}): ${reason}`);
-        console.error("Full error:", error);
+        console.error(`❌ Row ${rowNumber}: ${reason}`);
         errors.push({ row: rowNumber, kodeSap: item.kodeSap, reason });
       }
     }
 
-    console.log(`\n📊 Import Summary: ${successCount} success, ${skippedCount} skipped, ${errorCount} errors\n`);
-
-    // Return appropriate status code
     if (successCount === 0 && errors.length > 0) {
       return NextResponse.json({
         error: "All rows failed to import",
         successCount: 0,
         failedCount: errors.length,
-        errors: errors.slice(0, 10) // Limit error details to first 10
+        errors: errors.slice(0, 10)
       }, { status: 400 });
     }
 
@@ -160,8 +126,8 @@ export async function POST(req: NextRequest) {
       successCount,
       skippedCount,
       errorCount,
-      totalRows: data.length,
-      errors: errors.length > 0 ? errors.slice(0, 10) : [] // Limit to first 10 errors
+      totalRows: rows.length,
+      errors: errors.length > 0 ? errors.slice(0, 10) : []
     });
 
   } catch (error: any) {

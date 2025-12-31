@@ -9,6 +9,7 @@ interface AssetTableRowProps {
     onDelete: (id: string) => void;
     onEdit: (asset: Asset) => void;
     onLocate: (asset: Asset) => void;
+    userRole?: string;
 }
 
 export default function AssetTableRow({
@@ -16,6 +17,7 @@ export default function AssetTableRow({
     onDelete,
     onEdit,
     onLocate,
+    userRole,
 }: AssetTableRowProps) {
     const realPhotos = filterRealPhotos(asset.fotoAset);
     const hasFoto = hasRealPhotos(asset);
@@ -104,21 +106,25 @@ export default function AssetTableRow({
                     <MapPin className="w-4 h-4" />
                 </IconAction>
 
-                <IconAction
-                    title="Edit"
-                    color="gray"
-                    onClick={() => onEdit(asset)}
-                >
-                    <Edit className="w-4 h-4" />
-                </IconAction>
+                {userRole === "SUPER_ADMIN" && (
+                    <>
+                        <IconAction
+                            title="Edit"
+                            color="gray"
+                            onClick={() => onEdit(asset)}
+                        >
+                            <Edit className="w-4 h-4" />
+                        </IconAction>
 
-                <IconAction
-                    title="Hapus"
-                    color="red"
-                    onClick={() => onDelete(asset.id)}
-                >
-                    <Trash2 className="w-4 h-4" />
-                </IconAction>
+                        <IconAction
+                            title="Hapus"
+                            color="red"
+                            onClick={() => onDelete(asset.id)}
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </IconAction>
+                    </>
+                )}
             </td>
         </tr>
     );

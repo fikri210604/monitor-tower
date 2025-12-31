@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Home, User, LogOut, FileText, AlertTriangle, MapPinned, Image as ImageIcon } from "lucide-react";
+import { Home, User, LogOut, FileText, AlertTriangle, MapPinned, Users } from "lucide-react";
 
 export default function Sidebar({ className = "", onClose }: { className?: string; onClose?: () => void }) {
     const pathname = usePathname();
     const { data: session, status } = useSession();
+
+    // User role
+    const userRole = (session?.user as any)?.role;
 
     const links = [
         { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -16,6 +19,11 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
         { href: "/issues", label: "Permasalahan", icon: AlertTriangle },
         { href: "/profile", label: "Profile", icon: User },
     ];
+
+    // Add Users menu only for Super Admin
+    if (userRole === "SUPER_ADMIN") {
+        links.push({ href: "/users", label: "Manajemen User", icon: Users });
+    }
 
     if (status === "unauthenticated") return null;
 
