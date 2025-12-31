@@ -32,7 +32,7 @@ export function useTableFilters(assets: Asset[]) {
                 const addressParts = formatAddress(asset);
 
                 return (
-                    asset.kodeSap?.toLowerCase().includes(query) ||
+                    asset.kodeSap?.toString().toLowerCase().includes(query) ||
                     asset.deskripsi?.toLowerCase().includes(query) ||
                     asset.alamat?.toLowerCase().includes(query) ||
                     addressParts.toLowerCase().includes(query) ||
