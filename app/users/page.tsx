@@ -26,11 +26,11 @@ export default function UsersPage() {
         setToast({ message, type });
     };
 
-    // Redirect if not Super Admin
+    // Redirect if not Master
     useEffect(() => {
-        if (status === "authenticated" && (session?.user as any)?.role !== "SUPER_ADMIN") {
+        if (status === "authenticated" && (session?.user as any)?.role !== "MASTER") {
             router.push("/dashboard");
-            showToast("Akses ditolak: Hanya Super Admin yang dapat mengakses halaman ini", "error");
+            showToast("Akses ditolak: Hanya Master yang dapat mengakses halaman ini", "error");
         }
     }, [status, session, router]);
 
@@ -56,7 +56,7 @@ export default function UsersPage() {
     };
 
     useEffect(() => {
-        if (status === "authenticated" && (session?.user as any)?.role === "SUPER_ADMIN") {
+        if (status === "authenticated" && (session?.user as any)?.role === "MASTER") {
             fetchUsers();
         }
     }, [status, session]);
@@ -122,7 +122,7 @@ export default function UsersPage() {
         );
     }
 
-    if ((session?.user as any)?.role !== "SUPER_ADMIN") {
+    if ((session?.user as any)?.role !== "MASTER") {
         return null; // Will redirect in useEffect
     }
 

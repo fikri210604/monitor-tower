@@ -46,10 +46,11 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Check role - only Super Admin can update assets
-    if ((session.user as any).role !== "SUPER_ADMIN") {
+    // Check role - MASTER and ADMIN can update assets
+    const role = (session.user as any).role;
+    if (role !== "MASTER" && role !== "ADMIN") {
         return NextResponse.json(
-            { error: "Forbidden: Only Super Admin can update assets" },
+            { error: "Forbidden: Only Master and Admin can update assets" },
             { status: 403 }
         );
     }
@@ -84,6 +85,15 @@ export async function PUT(
                 penguasaanTanah: body.penguasaanTanah,
                 jenisBangunan: body.jenisBangunan,
                 permasalahanAset: body.permasalahanAset,
+
+                // Update Photo if provided
+                fotoAset: body.fotoUrl ? {
+                    deleteMany: {}, // Delete existing photos (simplification for single photo mode)
+                    create: {
+                        url: body.fotoUrl,
+                        deskripsi: "Foto Aset"
+                    }
+                } : undefined,
             },
             include: {
                 fotoAset: true
@@ -108,10 +118,11 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Check role - only Super Admin can delete assets
-    if ((session.user as any).role !== "SUPER_ADMIN") {
+    // Check role - MASTER and ADMIN can delete assets
+    const role = (session.user as any).role;
+    if (role !== "MASTER" && role !== "ADMIN") {
         return NextResponse.json(
-            { error: "Forbidden: Only Super Admin can delete assets" },
+            { error: "Forbidden: Only Master and Admin can delete assets" },
             { status: 403 }
         );
     }

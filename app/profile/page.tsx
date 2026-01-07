@@ -68,11 +68,11 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="mt-8 flex justify-end">
+                {/* <div className="mt-8 flex justify-end">
                     <button className="px-4 py-2 bg-pln-blue text-white rounded-lg hover:bg-sky-600 transition-colors text-sm font-medium shadow-sm">
                         Edit Profil
                     </button>
-                </div>
+                </div> */}
             </div>
         </div>
     );

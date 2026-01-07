@@ -33,4 +33,4 @@ export const ALL_STATUS_FILTER_LABEL = "Semua Status";
 export const PHOTO_CATEGORY_SERTIFIKAT = "SERTIFIKAT";
 
 // Status keywords
-export const CLEAN_STATUS_KEYWORDS = ["clean", "aman"];
+export const CLEAN_STATUS_KEYWORDS = ["clean", "aman", "clear", "tidak ada masalah"];

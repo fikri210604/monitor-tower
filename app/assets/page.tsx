@@ -17,7 +17,8 @@ const Map = dynamic(() => import("@/app/components/Map"), {
 
 export default function AssetsPage() {
     const { data: session } = useSession();
-    const isSuperAdmin = (session?.user as any)?.role === "SUPER_ADMIN";
+    const userRole = (session?.user as any)?.role;
+    const canManage = userRole === "MASTER" || userRole === "ADMIN";
 
     const [assets, setAssets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -134,7 +135,7 @@ export default function AssetsPage() {
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
-                    {isSuperAdmin && (
+                    {canManage && (
                         <>
                             <button
                                 onClick={() => setShowImport(!showImport)}
@@ -197,8 +198,8 @@ export default function AssetsPage() {
                                             <p className="font-bold text-gray-800 text-sm">{asset.kodeSap}</p>
                                             <p className="text-xs text-gray-500 line-clamp-1">{asset.alamat}</p>
                                         </div>
-                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                                            {new Date(asset.dibuatPada).toLocaleDateString()}
+                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full" suppressHydrationWarning>
+                                            {new Date(asset.dibuatPada).toLocaleDateString("id-ID")}
                                         </span>
                                     </div>
                                 </div>

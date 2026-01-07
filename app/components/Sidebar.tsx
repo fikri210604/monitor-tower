@@ -12,16 +12,21 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
     // User role
     const userRole = (session?.user as any)?.role;
 
-    const links = [
+    const baseLinks = [
         { href: "/dashboard", label: "Dashboard", icon: Home },
         { href: "/maps", label: "Peta", icon: MapPinned },
         { href: "/assets", label: "Data Aset", icon: FileText },
-        { href: "/issues", label: "Permasalahan", icon: AlertTriangle },
         { href: "/profile", label: "Profile", icon: User },
     ];
 
-    // Add Users menu only for Super Admin
-    if (userRole === "SUPER_ADMIN") {
+    // Filter links based on role (Immutable way)
+    const links = baseLinks.filter(link => {
+        if (link.href === "/dashboard" && userRole === "OPERATOR") return false;
+        return true;
+    });
+
+    // Add Users menu only for MASTER
+    if (userRole === "MASTER") {
         links.push({ href: "/users", label: "Manajemen User", icon: Users });
     }
 
@@ -30,8 +35,8 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
     return (
         <aside className={`w-64 bg-pln-blue text-white flex flex-col shadow-xl h-full overflow-hidden ${className}`}>
             <div className="p-6 border-b border-pln-cyan/30 flex items-center gap-3 shrink-0">
-                <div className="w-10 h-10 bg-pln-yellow rounded-lg flex items-center justify-center text-pln-blue font-bold text-xl shadow-lg">
-                    ⚡
+                <div className="w-10 h-10 relative flex items-center justify-center overflow-hidden">
+                    <img src="/logopln.jpg" alt="Logo PLN" className="w-full h-full object-contain" />
                 </div>
                 <div>
                     <h1 className="text-xl font-bold tracking-tight">Sertifikasi</h1>

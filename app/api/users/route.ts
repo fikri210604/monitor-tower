@@ -42,10 +42,10 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Check role - only Super Admin can access
-        if ((session.user as any).role !== "SUPER_ADMIN") {
+        // Check role - only Master can access
+        if ((session.user as any).role !== "MASTER") {
             return NextResponse.json(
-                { error: "Forbidden: Only Super Admin can access user management" },
+                { error: "Forbidden: Only Master can access user management" },
                 { status: 403 }
             );
         }
@@ -88,10 +88,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Check role - only Super Admin can create users
-        if ((session.user as any).role !== "SUPER_ADMIN") {
+        // Check role - only Master can create users
+        if ((session.user as any).role !== "MASTER") {
             return NextResponse.json(
-                { error: "Forbidden: Only Super Admin can create users" },
+                { error: "Forbidden: Only Master can create users" },
                 { status: 403 }
             );
         }

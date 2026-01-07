@@ -48,30 +48,26 @@ export default function AssetTableRow({
                 {formatCoordinates(asset.koordinatY, asset.koordinatX)}
             </td>
 
-            <td className="px-4 py-3 text-gray-600">
-                <span className="px-2 py-1 rounded bg-gray-100 text-xs font-medium">
-                    {getDisplayValue(asset.jenisDokumen)}
-                </span>
+            {/* Nomor Sertifikat (Just Text) */}
+            <td className="px-4 py-3 text-gray-600 font-medium">
+                {getDisplayValue(asset.nomorSertifikat)}
             </td>
 
-            {/* Sertifikat Link */}
+            {/* File Sertifikat (Link/Download) */}
             <td className="px-4 py-3">
                 {hasSertifikat ? (
                     <a
                         href={asset.linkSertifikat!}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-pln-blue hover:underline whitespace-nowrap"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 text-pln-blue hover:bg-blue-100 transition-colors"
+                        title={asset.jenisDokumen || "Unduh Sertifikat"}
                     >
-                        <FileText className="w-3 h-3" />
-                        <span className="text-xs font-semibold">
-                            {asset.nomorSertifikat || "Unduh"}
-                        </span>
+                        <FileText className="w-3.5 h-3.5" />
+                        <span className="text-xs font-semibold">Lihat File</span>
                     </a>
                 ) : (
-                    <span className="text-gray-400 text-xs italic">
-                        {getDisplayValue(asset.nomorSertifikat)}
-                    </span>
+                    <span className="text-gray-400 text-xs">-</span>
                 )}
             </td>
 
@@ -106,7 +102,7 @@ export default function AssetTableRow({
                     <MapPin className="w-4 h-4" />
                 </IconAction>
 
-                {userRole === "SUPER_ADMIN" && (
+                {(userRole === "MASTER" || userRole === "ADMIN" || userRole === "SUPER_ADMIN") && (
                     <>
                         <IconAction
                             title="Edit"

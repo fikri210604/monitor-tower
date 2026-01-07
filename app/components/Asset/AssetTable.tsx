@@ -134,8 +134,8 @@ export default function AssetTable({
                             <SortableHeader field="tahunPerolehan" label="Tahun" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <th className="px-4 py-3">Alamat</th>
                             <SortableHeader field="lokasi" label="Lokasi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="jenisDokumen" label="Dokumen" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <SortableHeader field="nomorSertifikat" label="Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="nomorSertifikat" label="Nomor Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="jenisDokumen" label="File Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="permasalahanAset" label="Masalah" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <th className="px-4 py-3 text-center">Foto</th>
                             <th className="px-4 py-3 text-right">Aksi</th>

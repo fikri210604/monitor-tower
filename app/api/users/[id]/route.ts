@@ -40,9 +40,9 @@ export async function GET(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        if ((session.user as any).role !== "SUPER_ADMIN") {
+        if ((session.user as any).role !== "MASTER") {
             return NextResponse.json(
-                { error: "Forbidden: Only Super Admin can access user management" },
+                { error: "Forbidden: Only Master can access user management" },
                 { status: 403 }
             );
         }
@@ -88,9 +88,9 @@ export async function PUT(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        if ((session.user as any).role !== "SUPER_ADMIN") {
+        if ((session.user as any).role !== "MASTER") {
             return NextResponse.json(
-                { error: "Forbidden: Only Super Admin can update users" },
+                { error: "Forbidden: Only Master can update users" },
                 { status: 403 }
             );
         }
@@ -180,9 +180,9 @@ export async function DELETE(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        if ((session.user as any).role !== "SUPER_ADMIN") {
+        if ((session.user as any).role !== "MASTER") {
             return NextResponse.json(
-                { error: "Forbidden: Only Super Admin can delete users" },
+                { error: "Forbidden: Only Master can delete users" },
                 { status: 403 }
             );
         }

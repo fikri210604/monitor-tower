@@ -19,6 +19,7 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
     const [data, setData] = useState<any[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [replaceAll, setReplaceAll] = useState(false);
+    const [strictFilter, setStrictFilter] = useState(true); // Default true: Hanya yang ada Nomor
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -44,7 +45,18 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
         reader.onload = (evt) => {
             const bstr = evt.target?.result;
             const wb = XLSX.read(bstr, { type: "binary" });
-            const wsname = wb.SheetNames[0];
+
+            // Cari sheet dengan nama "SERTIPIKAT" (case insensitive)
+            let wsname = wb.SheetNames.find(name => name.toUpperCase().includes("SERTIPIKAT"));
+
+            // Kalau tidak ketemu, pakai sheet pertama
+            if (!wsname) {
+                wsname = wb.SheetNames[0];
+                console.log("⚠️ Sheet 'SERTIPIKAT' not found, using first sheet:", wsname);
+            } else {
+                console.log("✅ Found target sheet:", wsname);
+            }
+
             const ws = wb.Sheets[wsname];
 
             // First, read as array of arrays to find header row
@@ -185,8 +197,8 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                             const normalized = normalizeEnumValue(row[key], "penguasaanTanah");
                             newRow[fieldName] = normalized || "DIKUASAI";
                         } else if (fieldName === "permasalahanAset") {
-                            const normalized = normalizeEnumValue(row[key], "permasalahanAset");
-                            newRow[fieldName] = normalized || "CLEAN_AND_CLEAR";
+                            // Direct copy for String type
+                            newRow[fieldName] = row[key];
                         }
                         // Other fields - just copy
                         else {
@@ -203,9 +215,22 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                 return newRow;
             });
 
-            console.log("✅ Normalized data (first 3 rows):", normalizedData.slice(0, 3));
-            console.log(`Total rows to import: ${normalizedData.length}`);
-            setData(normalizedData);
+            // Filter Logic
+            let validData = normalizedData;
+
+            if (strictFilter) {
+                // Hanya ambil baris yang memiliki kolom "NO"
+                validData = normalizedData.filter(row => {
+                    const hasNo = row.no !== undefined && row.no !== null && String(row.no).trim() !== "";
+                    return hasNo;
+                });
+                console.log(`🔍 Filtering applied. Kept ${validData.length} of ${normalizedData.length} rows.`);
+            } else {
+                console.log(`🔍 Filtering disabled. Importing all ${normalizedData.length} rows.`);
+            }
+
+            console.log(`✅ Ready to import: ${validData.length} rows`);
+            setData(validData);
             setError("");
         };
         reader.readAsBinaryString(file);
@@ -307,6 +332,21 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                             Centang ini akan <strong>menghapus semua data aset yang ada</strong> dan menggantinya dengan data baru dari Excel. Gunakan fitur ini untuk re-import dengan data yang sudah diperbaiki.
                         </p>
                     </div>
+                </label>
+            </div>
+
+            {/* Filter Toggle */}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <input
+                    type="checkbox"
+                    id="strictFilter"
+                    checked={strictFilter}
+                    onChange={(e) => setStrictFilter(e.target.checked)}
+                    className="w-4 h-4 text-pln-blue rounded border-gray-300 focus:ring-pln-blue"
+                />
+                <label htmlFor="strictFilter" className="text-sm text-gray-700 cursor-pointer select-none">
+                    <span className="font-semibold block">Hanya Import Data dengan Nomor</span>
+                    <span className="text-xs text-gray-500">Jika dicentang, baris tanpa nomor urut (NO) tidak akan dimasukkan. Hilangkan centang untuk import semuanya.</span>
                 </label>
             </div>
 

@@ -37,29 +37,6 @@ export const ENUM_MAPPINGS = {
         "PINJAMPAKAI": "TIDAK_DIKUASAI",
         "PINJAM": "TIDAK_DIKUASAI"
     },
-    permasalahanAset: {
-        "CLEAN_AND_CLEAR": "CLEAN_AND_CLEAR",
-        "CLEANANDCLEAR": "CLEAN_AND_CLEAR",
-        "CLEANCLEAR": "CLEAN_AND_CLEAR",
-        "CLEAN": "CLEAN_AND_CLEAR",
-        "CLEAR": "CLEAN_AND_CLEAR",
-        "CC": "CLEAN_AND_CLEAR",
-        "C_AND_C": "CLEAN_AND_CLEAR",
-        "TIDAK_ADA_MASALAH": "CLEAN_AND_CLEAR",
-        "TIDAKADAMASALAH": "CLEAN_AND_CLEAR",
-        "AMAN": "CLEAN_AND_CLEAR",
-        "TUMPAK_TINDIH": "TUMPAK_TINDIH",
-        "TUMPAKTINDIH": "TUMPAK_TINDIH",
-        "TUMPANG_TINDIH": "TUMPAK_TINDIH",
-        "TUMPANGTINDIH": "TUMPAK_TINDIH",
-        "TINDIH": "TUMPAK_TINDIH",
-        "TUMPANG": "TUMPAK_TINDIH",
-        "TUMPAK": "TUMPAK_TINDIH",
-        "SENGKETA": "TUMPAK_TINDIH",
-        "KONFLIK": "TUMPAK_TINDIH",
-        "IRISAN": "TUMPAK_TINDIH",
-        "BUMN": "TUMPAK_TINDIH"
-    }
 } as const;
 
 export type EnumType = keyof typeof ENUM_MAPPINGS;
@@ -121,6 +98,7 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
 
     // Deskripsi
     "DESKRIPSI": "deskripsi",
+    "DESCRIPTION": "deskripsi",
     "NAMA ASET": "deskripsi",
     "NAMASET": "deskripsi",
     "URAIAN BMN": "deskripsi",
@@ -131,6 +109,8 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
     "LUAS TANAH": "luasTanah",
     "LUASTANAH": "luasTanah",
     "LUAS": "luasTanah",
+    "LUAS (M2)": "luasTanah",
+    "LUAS (M²)": "luasTanah",
     "LUAS TANAH (M²)": "luasTanah",
     "LUAS TANAH (M2)": "luasTanah",
     "LUAS TANAH M2": "luasTanah",
@@ -160,28 +140,45 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
     // Provinsi
     "PROVINSI": "provinsi",
 
-    // Koordinat X (Latitude)
+    // Koordinat X (Longitude)
     "TITIK KOORDINAT (X)": "koordinatX",
     "TITIKKOORDINAT(X)": "koordinatX",
     "TITIK KOORDINAT X": "koordinatX",
+    "KOORDINAT X": "koordinatX",
+    "X": "koordinatX",
 
-    // Koordinat Y (Longitude)
+    // Koordinat Y (Latitude)
     "TITIK KOORDINAT (Y)": "koordinatY",
     "TITIKKOORDINAT(Y)": "koordinatY",
     "TITIK KOORDINAT Y": "koordinatY",
+    "KOORDINAT Y": "koordinatY",
+    "Y": "koordinatY",
+
+    // Kolom NO (Filter)
+    "NO": "no",
+    "NO.": "no",
+    "NOMOR": "no",
 
     // Jenis Dokumen
     "JENIS DOKUMEN": "jenisDokumen",
     "JENISDOKUMEN": "jenisDokumen",
     "JENIS DOKUMEN LEGAL EXISTING": "jenisDokumen",
     "JENISDOKUMENLEGALEXISTING": "jenisDokumen",
-    "DOKUMEN LEGAL": "jenisDokumen",
+    // Removed "DOKUMEN LEGAL" as it likely refers to the link based on user feedback
+
+    // Link PDF Dokumen (General 'DOKUMEN' maps here now)
+    "DOKUMEN": "linkSertifikat",
+    "DOKUMEN LEGAL": "linkSertifikat",
+    "FILE": "linkSertifikat",
+    "LINK": "linkSertifikat",
 
     // Nomor Sertifikat
     "NOMOR SERTIFIKAT": "nomorSertifikat",
     "NOMORSERTIFIKAT": "nomorSertifikat",
+    "NOMOR SERTIPIKAT": "nomorSertifikat",
     "NO SERTIFIKAT": "nomorSertifikat",
     "NOSERTIFIKAT": "nomorSertifikat",
+    "NO SERTIPIKAT": "nomorSertifikat",
 
     // Tanggal Sertifikat
     "TANGGAL AWAL SERTIFIKAT": "tanggalAwalSertifikat",
@@ -224,7 +221,8 @@ export function getFieldName(columnName: string): string | null {
         return null;
     }
 
-    const normalized = columnName.trim().toUpperCase();
+    // Normalize: Trim, Upper, and collapse multiple spaces to single space
+    const normalized = columnName.trim().toUpperCase().replace(/\s+/g, ' ');
     const result = COLUMN_MAPPINGS[normalized] || null;
 
     if (!result) {

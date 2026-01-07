@@ -21,7 +21,8 @@ export function formatAddress(asset: Asset): string {
 /**
  * Format coordinates for display
  */
-export function formatCoordinates(lat: number, lng: number, decimals = 5): string {
+export function formatCoordinates(lat: number | null | undefined, lng: number | null | undefined, decimals = 5): string {
+    if (lat === null || lat === undefined || lng === null || lng === undefined) return "-";
     return `${lat.toFixed(decimals)}, ${lng.toFixed(decimals)}`;
 }
 

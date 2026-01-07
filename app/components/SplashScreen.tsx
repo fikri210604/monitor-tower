@@ -20,11 +20,10 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
             className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-white transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
                 }`}
         >
-            <div className="relative mb-8 animate-bounce">
-                <div className="w-24 h-24 bg-pln-yellow rounded-2xl flex items-center justify-center shadow-2xl relative z-10">
-                    <span className="text-5xl">⚡</span>
+            <div className="relative mb-8">
+                <div className="w-32 h-32 flex items-center justify-center relative z-10 overflow-hidden">
+                    <img src="/logopln.jpg" alt="Logo PLN" className="w-full h-full object-contain" />
                 </div>
-                <div className="absolute inset-0 bg-pln-blue rounded-2xl rotate-6 opacity-30 blur-sm"></div>
             </div>
 
             <div className="text-center space-y-2">

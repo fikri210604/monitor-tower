@@ -15,7 +15,7 @@ export default function UserFormModal({ isOpen, onClose, onSave, initialData }: 
         name: "",
         username: "",
         password: "",
-        role: "OPERATOR" as "SUPER_ADMIN" | "OPERATOR",
+        role: "OPERATOR" as "MASTER" | "ADMIN" | "OPERATOR",
     });
 
     const [loading, setLoading] = useState(false);
@@ -209,10 +209,12 @@ export default function UserFormModal({ isOpen, onClose, onSave, initialData }: 
                             required
                             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue outline-none bg-white"
                             value={formData.role}
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value as "SUPER_ADMIN" | "OPERATOR" })}
+                            onChange={(e) => setFormData({ ...formData, role: e.target.value as "MASTER" | "ADMIN" | "OPERATOR" })}
                         >
                             <option value="OPERATOR">Operator</option>
-                            <option value="SUPER_ADMIN">Super Admin</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="MASTER">Master</option>
+                            <option value="SUPER_ADMIN" disabled hidden>Super Admin (Legacy)</option>
                         </select>
                     </div>
 

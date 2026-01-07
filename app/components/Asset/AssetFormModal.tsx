@@ -143,7 +143,8 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
                 if (type === "foto") {
                     setFormData(prev => ({ ...prev, fotoUrl: result.url }));
                 } else {
-                    setFormData(prev => ({ ...prev, sertifikatUrl: result.url }));
+                    // Sync both sertifikatUrl (for detailed state) and linkSertifikat (for DB)
+                    setFormData(prev => ({ ...prev, sertifikatUrl: result.url, linkSertifikat: result.url }));
                 }
             } else {
                 alert("Upload failed: " + result.error);
@@ -369,13 +370,13 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
                                 />
                             </div>
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Link Sertifikat (URL)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Link Sertifikat (URL / Path)</label>
                                 <input
-                                    type="url"
+                                    type="text"
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pln-blue/20 outline-none"
                                     value={formData.linkSertifikat}
                                     onChange={(e) => setFormData({ ...formData, linkSertifikat: e.target.value })}
-                                    placeholder="https://example.com/sertifikat.pdf"
+                                    placeholder="/uploads/file.pdf atau https://..."
                                 />
                             </div>
                         </div>
@@ -409,18 +410,56 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
                                     <option value="GARDU_INDUK">Gardu Induk</option>
                                 </select>
                             </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Permasalahan Aset *</label>
-                                <select
-                                    required
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pln-blue/20 outline-none bg-white"
-                                    value={formData.permasalahanAset}
-                                    onChange={(e) => setFormData({ ...formData, permasalahanAset: e.target.value })}
-                                >
-                                    <option value="CLEAN_AND_CLEAR">Clean and Clear</option>
-                                    <option value="TUMPAK_TINDIH">Tumpak Tindih</option>
-                                </select>
-                            </div>
+                            {(() => {
+                                const STANDARD_PROBLEMS = [
+                                    "CLEAN AND CLEAR",
+                                    "TUMPAK TINDIH",
+                                    "BERSENGKETA",
+                                    "DALAM PENGADILAN",
+                                    "BELUM BERSERTIFIKAT"
+                                ];
+
+                                const isCustom = !STANDARD_PROBLEMS.includes(formData.permasalahanAset);
+
+                                return (
+                                    <div className="space-y-2">
+                                        <select
+                                            required
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pln-blue/20 outline-none bg-white"
+                                            value={isCustom ? "LAINNYA" : formData.permasalahanAset}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === "LAINNYA") {
+                                                    // Jika pindah ke Lainnya, kosongkan biar user bisa ketik (kecuali sudah ada value custom)
+                                                    if (STANDARD_PROBLEMS.includes(formData.permasalahanAset)) {
+                                                        setFormData({ ...formData, permasalahanAset: "" });
+                                                    }
+                                                } else {
+                                                    setFormData({ ...formData, permasalahanAset: val });
+                                                }
+                                            }}
+                                        >
+                                            {STANDARD_PROBLEMS.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                            <option value="LAINNYA">Lainnya (Ketik Manual)</option>
+                                        </select>
+
+                                        {/* Input Manual muncul jika 'Lainnya' dipilih atau value tidak ada di list standar */}
+                                        {isCustom && (
+                                            <input
+                                                type="text"
+                                                required
+                                                autoFocus
+                                                className="w-full px-3 py-2 border border-pln-blue rounded-lg ring-2 ring-pln-blue/10 outline-none animate-in fade-in slide-in-from-top-1 duration-200"
+                                                value={formData.permasalahanAset}
+                                                onChange={(e) => setFormData({ ...formData, permasalahanAset: e.target.value })}
+                                                placeholder="Ketik detail permasalahan..."
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
 

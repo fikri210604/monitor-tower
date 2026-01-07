@@ -43,10 +43,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check role - only Super Admin can create assets
-  if ((session.user as any).role !== "SUPER_ADMIN") {
+  // Check role - MASTER and ADMIN can create assets
+  const role = (session.user as any).role;
+  if (role !== "MASTER" && role !== "ADMIN") {
     return NextResponse.json(
-      { error: "Forbidden: Only Super Admin can create assets" },
+      { error: "Forbidden: Only Master and Admin can create assets" },
       { status: 403 }
     );
   }
@@ -93,12 +94,14 @@ export async function POST(req: NextRequest) {
         penguasaanTanah: body.penguasaanTanah,
         jenisBangunan: body.jenisBangunan,
         permasalahanAset: body.permasalahanAset,
-        fotoAset: body.fotoAset
+        fotoAset: body.fotoUrl
           ? {
-            create: body.fotoAset.map((url: string) => ({
-              url,
-              keterangan: null,
-            })),
+            create: [
+              {
+                url: body.fotoUrl,
+                deskripsi: "Foto Aset",
+              }
+            ]
           }
           : undefined,
       },

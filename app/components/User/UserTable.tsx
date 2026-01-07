@@ -297,12 +297,16 @@ function UserTableRow({
 
     const getRoleBadge = (role: string) => {
         const colors = {
-            SUPER_ADMIN: "bg-red-100 text-red-700",
-            OPERATOR: "bg-blue-100 text-blue-700",
+            MASTER: "bg-amber-100 text-amber-800 border-amber-200",
+            ADMIN: "bg-emerald-100 text-emerald-700 border-emerald-200",
+            OPERATOR: "bg-blue-100 text-blue-700 border-blue-200",
+            SUPER_ADMIN: "bg-gray-100 text-gray-500 border-gray-200", // Legacy
         };
 
+        const colorClass = colors[role as keyof typeof colors] || "bg-gray-100 text-gray-700";
+
         return (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${colors[role as keyof typeof colors]}`}>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap border ${colorClass}`}>
                 {role}
             </span>
         );

@@ -9,10 +9,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check role - only Super Admin can import assets
-  if ((session.user as any).role !== "SUPER_ADMIN") {
+  // Check role - Master and Admin can import
+  const role = (session.user as any).role;
+  if (role !== "MASTER" && role !== "ADMIN") {
     return NextResponse.json(
-      { error: "Forbidden: Only Super Admin can import assets" },
+      { error: "Forbidden: Only Master and Admin can import assets" },
       { status: 403 }
     );
   }
@@ -60,26 +61,18 @@ export async function POST(req: NextRequest) {
         if (!item.permasalahanAset) item.permasalahanAset = "CLEAN_AND_CLEAR";
 
         // Required fields validation
-        const missingFields = [];
-        if (!item.koordinatX) missingFields.push("koordinatX");
-        if (!item.koordinatY) missingFields.push("koordinatY");
-
-        if (missingFields.length > 0) {
-          const reason = `Missing required coordinates: ${missingFields.join(", ")}`;
-          console.warn(`⚠️  Row ${rowNumber} (KodeSap: ${item.kodeSap}): ${reason}`);
-          errors.push({ row: rowNumber, kodeSap: item.kodeSap, reason });
-          skippedCount++;
-          continue;
-        }
+        // Coordinates are now optional
+        if (item.koordinatX === null || item.koordinatX === undefined || item.koordinatX === "") item.koordinatX = null;
+        if (item.koordinatY === null || item.koordinatY === undefined || item.koordinatY === "") item.koordinatY = null;
 
         // Enum validation
         const validJenisBangunan = ["GARDU_INDUK", "TAPAK_TOWER"];
         const validPenguasaanTanah = ["DIKUASAI", "TIDAK_DIKUASAI"];
-        const validPermasalahanAset = ["CLEAN_AND_CLEAR", "TUMPAK_TINDIH"];
 
         if (!validJenisBangunan.includes(item.jenisBangunan)) item.jenisBangunan = "TAPAK_TOWER";
         if (!validPenguasaanTanah.includes(item.penguasaanTanah)) item.penguasaanTanah = "DIKUASAI";
-        if (!validPermasalahanAset.includes(item.permasalahanAset)) item.permasalahanAset = "CLEAN_AND_CLEAR";
+        // Removed validation for permasalahanAset as it is now a String
+
 
         await prisma.asetTower.create({
           data: {
@@ -93,8 +86,8 @@ export async function POST(req: NextRequest) {
             kecamatan: item.kecamatan || null,
             kabupaten: item.kabupaten || null,
             provinsi: item.provinsi || "LAMPUNG",
-            koordinatX: parseFloat(item.koordinatX),
-            koordinatY: parseFloat(item.koordinatY),
+            koordinatX: item.koordinatX !== null ? parseFloat(item.koordinatX) : null,
+            koordinatY: item.koordinatY !== null ? parseFloat(item.koordinatY) : null,
             jenisDokumen: item.jenisDokumen || null,
             nomorSertifikat: item.nomorSertifikat || null,
             penguasaanTanah: item.penguasaanTanah,
