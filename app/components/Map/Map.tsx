@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, LayersControl, useMap, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -33,6 +33,7 @@ interface MapProps {
     focusedLocation?: [number, number] | null;
     onMarkerClick?: (marker: any) => void;
     mapStyle?: "STREET" | "SATELLITE";
+    selectedMarkerId?: string | number | null;
 }
 
 export default function Map({
@@ -41,7 +42,8 @@ export default function Map({
     zoom = 8,
     focusedLocation = null,
     onMarkerClick,
-    mapStyle = "STREET"
+    mapStyle = "STREET",
+    selectedMarkerId = null
 }: MapProps) {
     useEffect(() => {
         fixLeafletIcon();
@@ -100,8 +102,139 @@ export default function Map({
         !isNaN(Number(m.koordinatY)) && !isNaN(Number(m.koordinatX))
     );
 
+    // --- SUB-COMPONENT FOR MARKER LOGIC ---
+    function MarkerWithLogic({ marker, icon, isSelected, onClick }: any) {
+        const markerRef = useRef<any>(null);
+
+        useEffect(() => {
+            if (isSelected && markerRef.current) {
+                markerRef.current.openPopup();
+            }
+        }, [isSelected]);
+
+        return (
+            <Marker
+                ref={markerRef}
+                key={marker.id}
+                position={[marker.koordinatY, marker.koordinatX]}
+                icon={icon}
+                eventHandlers={{
+                    click: (e) => {
+                        if (window.innerWidth < 768) {
+                            e.target.closePopup();
+                            if (onClick) onClick({ ...marker, latitude: marker.koordinatY, longitude: marker.koordinatX });
+                        }
+                    },
+                }}
+            >
+                {/* POPUP DETAILED */}
+                <Popup minWidth={300} maxWidth={320} className="custom-popup-detailed">
+                    <div className="font-sans text-gray-800 p-1">
+                        {/* Header: SAP & Status */}
+                        <div className="flex items-start justify-between border-b border-gray-100 pb-2 mb-2">
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-0.5">Kode SAP</p>
+                                <p className="text-base font-bold text-pln-blue leading-none">{marker.kodeSap}</p>
+                            </div>
+                            <div className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 ${hasCertificate(marker) ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-red-50 text-red-700 border border-red-100"}`}>
+                                {hasCertificate(marker) ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                                {hasCertificate(marker) ? "Sertifikat Ada" : "Belum Sertifikat"}
+                            </div>
+                        </div>
+
+                        {/* Deskripsi */}
+                        <div className="mb-3">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">Deskripsi</p>
+                            <p className="text-xs font-medium text-gray-700 leading-snug line-clamp-3">
+                                {marker.deskripsi || "Tidak ada deskripsi"}
+                            </p>
+                        </div>
+
+                        {/* Info Grid */}
+                        <div className="grid grid-cols-2 gap-2 mb-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                            <div>
+                                <p className="text-[9px] text-gray-500 mb-0.5">Luas Tanah</p>
+                                <p className="text-xs font-semibold flex items-center gap-1">
+                                    <Ruler size={12} className="text-gray-400" />
+                                    {marker.luasTanah ? `${marker.luasTanah.toLocaleString('id-ID')} m²` : "-"}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] text-gray-500 mb-0.5">Tahun Perolehan</p>
+                                <p className="text-xs font-semibold flex items-center gap-1">
+                                    <Calendar size={12} className="text-gray-400" />
+                                    {marker.tahunPerolehan || "-"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Alamat */}
+                        <div className="mb-3">
+                            <p className="text-[9px] text-gray-500 mb-0.5">Lokasi / Alamat</p>
+                            <div className="flex items-start gap-1.5 text-xs text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                                <MapPin size={14} className="mt-0.5 shrink-0 text-red-500" />
+                                <span className="leading-tight">{marker.alamat || "Alamat tidak tersedia"}</span>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons: Sertifikat & Foto */}
+                        <div className="flex flex-col gap-2 mb-3">
+                            {/* Button File Sertifikat */}
+                            {hasCertificate(marker) && marker.linkSertifikat && (
+                                <a
+                                    href={marker.linkSertifikat}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full py-1.5 bg-blue-50 text-pln-blue hover:bg-blue-100 rounded-md transition-colors border border-blue-100 group"
+                                >
+                                    <ExternalLink size={14} />
+                                    <span className="text-xs font-semibold">Lihat File Sertifikat</span>
+                                </a>
+                            )}
+
+                            {/* Preview/Info Foto (Placeholder logic if photo exists) */}
+                            {marker.fotoAset && marker.fotoAset.length > 0 && (
+                                <button
+                                    onClick={() => window.open(marker.fotoAset[0].url, "_blank")}
+                                    className="flex items-center justify-center gap-2 w-full py-1.5 bg-gray-50 text-gray-700 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {/* Tiny preview if possible, otherwise icon */}
+                                        <div className="w-4 h-4 rounded bg-gray-300 overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(${marker.fotoAset[0].url})` }}></div>
+                                        <span className="text-xs font-semibold">Lihat Foto ({marker.fotoAset.length})</span>
+                                    </div>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Footer: Koordinat & Google Maps Link */}
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <div
+                                onClick={() => handleCopy(`${marker.koordinatY}, ${marker.koordinatX}`)}
+                                className="cursor-pointer hover:bg-gray-50 px-2 py-1 rounded group"
+                                title="Klik untuk salin koordinat"
+                            >
+                                <p className="text-[9px] text-gray-400 font-mono flex items-center gap-1">
+                                    {marker.koordinatY.toFixed(5)}, {marker.koordinatX.toFixed(5)}
+                                    <Copy size={10} className="text-gray-300 group-hover:text-gray-500" />
+                                </p>
+                            </div>
+                            <a
+                                href={`https://www.google.com/maps?q=${marker.koordinatY},${marker.koordinatX}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="text-[10px] font-bold text-pln-blue hover:underline flex items-center gap-0.5"
+                            >
+                                Buka Maps <ExternalLink size={10} />
+                            </a>
+                        </div>
+                    </div>
+                </Popup>
+            </Marker>
+        );
+    }
+
     // --- VIEWPORT FILTERING COMPONENT ---
-    function VisibleMarkers({ markers, onMarkerClick }: { markers: any[], onMarkerClick?: (m: any) => void }) {
+    function VisibleMarkers({ markers, onMarkerClick, selectedId }: { markers: any[], onMarkerClick?: (m: any) => void, selectedId: string | number | null }) {
         const map = useMap();
         const [bounds, setBounds] = useState(map.getBounds());
 
@@ -132,122 +265,13 @@ export default function Map({
                     }
 
                     return (
-                        <Marker
+                        <MarkerWithLogic
                             key={marker.id || idx}
-                            position={[marker.koordinatY, marker.koordinatX]}
+                            marker={marker}
                             icon={iconToUse}
-                            eventHandlers={{
-                                click: (e) => {
-                                    if (window.innerWidth < 768) {
-                                        e.target.closePopup();
-                                        if (onMarkerClick) onMarkerClick({ ...marker, latitude: marker.koordinatY, longitude: marker.koordinatX });
-                                    }
-                                },
-                            }}
-                        >
-                            {/* POPUP DETAILED */}
-                            <Popup minWidth={300} maxWidth={320} className="custom-popup-detailed">
-                                <div className="font-sans text-gray-800 p-1">
-                                    {/* Header: SAP & Status */}
-                                    <div className="flex items-start justify-between border-b border-gray-100 pb-2 mb-2">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-0.5">Kode SAP</p>
-                                            <p className="text-base font-bold text-pln-blue leading-none">{marker.kodeSap}</p>
-                                        </div>
-                                        <div className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 ${hasCertificate(marker) ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-red-50 text-red-700 border border-red-100"}`}>
-                                            {hasCertificate(marker) ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                                            {hasCertificate(marker) ? "Sertifikat Ada" : "Belum Sertifikat"}
-                                        </div>
-                                    </div>
-
-                                    {/* Deskripsi */}
-                                    <div className="mb-3">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">Deskripsi</p>
-                                        <p className="text-xs font-medium text-gray-700 leading-snug line-clamp-3">
-                                            {marker.deskripsi || "Tidak ada deskripsi"}
-                                        </p>
-                                    </div>
-
-                                    {/* Info Grid */}
-                                    <div className="grid grid-cols-2 gap-2 mb-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                        <div>
-                                            <p className="text-[9px] text-gray-500 mb-0.5">Luas Tanah</p>
-                                            <p className="text-xs font-semibold flex items-center gap-1">
-                                                <Ruler size={12} className="text-gray-400" />
-                                                {marker.luasTanah ? `${marker.luasTanah.toLocaleString('id-ID')} m²` : "-"}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] text-gray-500 mb-0.5">Tahun Perolehan</p>
-                                            <p className="text-xs font-semibold flex items-center gap-1">
-                                                <Calendar size={12} className="text-gray-400" />
-                                                {marker.tahunPerolehan || "-"}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Alamat */}
-                                    <div className="mb-3">
-                                        <p className="text-[9px] text-gray-500 mb-0.5">Lokasi / Alamat</p>
-                                        <div className="flex items-start gap-1.5 text-xs text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
-                                            <MapPin size={14} className="mt-0.5 shrink-0 text-red-500" />
-                                            <span className="leading-tight">{marker.alamat || "Alamat tidak tersedia"}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Buttons: Sertifikat & Foto */}
-                                    <div className="flex flex-col gap-2 mb-3">
-                                        {/* Button File Sertifikat */}
-                                        {hasCertificate(marker) && marker.linkSertifikat && (
-                                            <a
-                                                href={marker.linkSertifikat}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center justify-center gap-2 w-full py-1.5 bg-blue-50 text-pln-blue hover:bg-blue-100 rounded-md transition-colors border border-blue-100 group"
-                                            >
-                                                <ExternalLink size={14} />
-                                                <span className="text-xs font-semibold">Lihat File Sertifikat</span>
-                                            </a>
-                                        )}
-
-                                        {/* Preview/Info Foto (Placeholder logic if photo exists) */}
-                                        {marker.fotoAset && marker.fotoAset.length > 0 && (
-                                            <button
-                                                onClick={() => window.open(marker.fotoAset[0].url, "_blank")}
-                                                className="flex items-center justify-center gap-2 w-full py-1.5 bg-gray-50 text-gray-700 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    {/* Tiny preview if possible, otherwise icon */}
-                                                    <div className="w-4 h-4 rounded bg-gray-300 overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(${marker.fotoAset[0].url})` }}></div>
-                                                    <span className="text-xs font-semibold">Lihat Foto ({marker.fotoAset.length})</span>
-                                                </div>
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Footer: Koordinat & Google Maps Link */}
-                                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                                        <div
-                                            onClick={() => handleCopy(`${marker.koordinatY}, ${marker.koordinatX}`)}
-                                            className="cursor-pointer hover:bg-gray-50 px-2 py-1 rounded group"
-                                            title="Klik untuk salin koordinat"
-                                        >
-                                            <p className="text-[9px] text-gray-400 font-mono flex items-center gap-1">
-                                                {marker.koordinatY.toFixed(5)}, {marker.koordinatX.toFixed(5)}
-                                                <Copy size={10} className="text-gray-300 group-hover:text-gray-500" />
-                                            </p>
-                                        </div>
-                                        <a
-                                            href={`https://www.google.com/maps?q=${marker.koordinatY},${marker.koordinatX}`}
-                                            target="_blank" rel="noopener noreferrer"
-                                            className="text-[10px] font-bold text-pln-blue hover:underline flex items-center gap-0.5"
-                                        >
-                                            Buka Maps <ExternalLink size={10} />
-                                        </a>
-                                    </div>
-                                </div>
-                            </Popup>
-                        </Marker>
+                            isSelected={selectedId === marker.id}
+                            onClick={onMarkerClick}
+                        />
                     );
                 })}
             </>
@@ -271,7 +295,7 @@ export default function Map({
                 />
             )}
 
-            <VisibleMarkers markers={validMarkers} onMarkerClick={onMarkerClick} />
+            <VisibleMarkers markers={validMarkers} onMarkerClick={onMarkerClick} selectedId={selectedMarkerId} />
         </MapContainer>
     );
 }

@@ -94,10 +94,7 @@ export default function MapsPage() {
 
     const handleSelectResult = (asset: any) => {
         setFocusedLocation([asset.koordinatY, asset.koordinatX]);
-        // Jika di layar HP (lebar < 768), buka panel detail bawah
-        if (window.innerWidth < 768) {
-            setSelectedAsset(asset);
-        }
+        setSelectedAsset(asset);
         setSearchQuery("");
         setShowSuggestions(false);
     };
@@ -109,6 +106,7 @@ export default function MapsPage() {
                 markers={mapAssets}
                 focusedLocation={focusedLocation}
                 mapStyle={mapStyle}
+                selectedMarkerId={selectedAsset?.id}
                 onMarkerClick={(asset) => {
                     setSelectedAsset(asset);
                     setFocusedLocation([asset.koordinatY, asset.koordinatX]);
