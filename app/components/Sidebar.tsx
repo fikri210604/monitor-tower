@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { Home, User, LogOut, FileText, AlertTriangle, MapPinned, Users } from "lucide-react";
+import logoPln from "../../public/logopln.jpg";
 
 export default function Sidebar({ className = "", onClose }: { className?: string; onClose?: () => void }) {
     const pathname = usePathname();
@@ -36,7 +38,7 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
         <aside className={`w-64 bg-pln-blue text-white flex flex-col shadow-xl h-full overflow-hidden ${className}`}>
             <div className="p-6 border-b border-pln-cyan/30 flex items-center gap-3 shrink-0">
                 <div className="w-10 h-10 relative flex items-center justify-center overflow-hidden">
-                    <img src="/logopln.jpg" alt="Logo PLN" className="w-full h-full object-contain" />
+                    <NextImage src={logoPln} alt="Logo PLN" className="w-full h-full object-contain" priority />
                 </div>
                 <div>
                     <h1 className="text-xl font-bold tracking-tight">Sertifikasi</h1>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
+import logoPln from "../../public/logopln.jpg";
 
 export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
     const [isVisible, setIsVisible] = useState(true);
@@ -22,7 +23,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
         >
             <div className="relative mb-8">
                 <div className="w-32 h-32 flex items-center justify-center relative z-10 overflow-hidden">
-                    <img src="/logopln.jpg" alt="Logo PLN" className="w-full h-full object-contain" />
+                    <NextImage src={logoPln} alt="Logo PLN" className="w-full h-full object-contain" priority />
                 </div>
             </div>
 

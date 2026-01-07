@@ -65,28 +65,26 @@ export default function Map({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.3))',
-                    transform: 'translateY(-5px)'
                 }}>
-                    <IconComponent size={28} color={color} strokeWidth={2.5} fill={bgColor} />
+                    <IconComponent size={14} color={color} strokeWidth={3} fill={bgColor} />
                     {isProblem && (
                         <div style={{
                             position: 'absolute',
-                            top: -2,
-                            right: -2,
-                            width: 10,
-                            height: 10,
+                            top: -1,
+                            right: -1,
+                            width: 6,
+                            height: 6,
                             backgroundColor: '#ef4444',
                             borderRadius: '50%',
-                            border: '2px solid white'
+                            border: '1px solid white'
                         }}></div>
                     )}
                 </div>
             ),
             className: 'custom-tower-icon',
-            iconSize: [28, 28],
-            iconAnchor: [14, 28],
-            popupAnchor: [0, -30],
+            iconSize: [14, 14],
+            iconAnchor: [7, 14],
+            popupAnchor: [0, -14],
         });
     };
 
