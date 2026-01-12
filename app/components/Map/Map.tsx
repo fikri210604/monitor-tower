@@ -5,8 +5,10 @@ import { MapContainer, TileLayer, Marker, LayersControl, useMap, Popup, useMapEv
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-import { TowerControl, CheckCircle2, AlertCircle, MapPin, ExternalLink, Copy, Ruler, Calendar, Zap } from "lucide-react";
+import Link from "next/link";
+import { TowerControl, CheckCircle2, AlertCircle, MapPin, ExternalLink, Copy, Ruler, Calendar, Zap, ArrowRight } from "lucide-react";
 import { renderToString } from "react-dom/server";
+import PhotoLightbox from "../Shared/PhotoLightbox";
 
 // Fix Leaflet Icon
 const fixLeafletIcon = () => {
@@ -108,7 +110,10 @@ export default function Map({
 
         useEffect(() => {
             if (isSelected && markerRef.current) {
-                markerRef.current.openPopup();
+                // Hanya buka sembulan otomatis di Desktop
+                if (window.innerWidth >= 768) {
+                    markerRef.current.openPopup();
+                }
             }
         }, [isSelected]);
 
@@ -128,17 +133,17 @@ export default function Map({
                 }}
             >
                 {/* POPUP DETAILED */}
-                <Popup minWidth={300} maxWidth={320} className="custom-popup-detailed">
+                <Popup minWidth={300} maxWidth={320} className="custom-popup-detailed" autoPanPadding={[10, 80]}>
                     <div className="font-sans text-gray-800 p-1">
-                        {/* Header: SAP & Status */}
-                        <div className="flex items-start justify-between border-b border-gray-100 pb-2 mb-2">
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-0.5">Kode SAP</p>
+                        {/* Header: SAP & Certificate Status */}
+                        <div className="flex flex-col border-b border-gray-100 pb-2 mb-2">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">Kode SAP</p>
+                            <div className="flex items-center gap-2">
                                 <p className="text-base font-bold text-pln-blue leading-none">{marker.kodeSap}</p>
-                            </div>
-                            <div className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 ${hasCertificate(marker) ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-red-50 text-red-700 border border-red-100"}`}>
-                                {hasCertificate(marker) ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                                {hasCertificate(marker) ? "Sertifikat Ada" : "Belum Sertifikat"}
+                                <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 border ${hasCertificate(marker) ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-700 border-red-100"}`}>
+                                    {hasCertificate(marker) ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
+                                    {hasCertificate(marker) ? "Ada Sertifikat" : "Belum Sertifikat"}
+                                </div>
                             </div>
                         </div>
 
@@ -179,6 +184,15 @@ export default function Map({
 
                         {/* Action Buttons: Sertifikat & Foto */}
                         <div className="flex flex-col gap-2 mb-3">
+                            {/* Button Detail Aset (NEW) */}
+                            <Link
+                                href={`/assets/${marker.id}`}
+                                className="flex items-center justify-center gap-2 w-full py-2 bg-pln-blue text-white hover:bg-blue-700 rounded-md transition-colors shadow-sm group"
+                            >
+                                <span className="text-xs font-bold">Lihat Detail Aset</span>
+                                <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                            </Link>
+
                             {/* Button File Sertifikat */}
                             {hasCertificate(marker) && marker.linkSertifikat && (
                                 <a
@@ -195,7 +209,9 @@ export default function Map({
                             {/* Preview/Info Foto (Placeholder logic if photo exists) */}
                             {marker.fotoAset && marker.fotoAset.length > 0 && (
                                 <button
-                                    onClick={() => window.open(marker.fotoAset[0].url, "_blank")}
+                                    onClick={() => {
+                                        if (onClick) onClick({ ...marker, action: 'viewPhotos' }); // Pass action to parent
+                                    }}
                                     className="flex items-center justify-center gap-2 w-full py-1.5 bg-gray-50 text-gray-700 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
                                 >
                                     <div className="flex items-center gap-2">
@@ -254,14 +270,17 @@ export default function Map({
         return (
             <>
                 {visibleMarkers.map((marker, idx) => {
-                    const isProblem = marker.permasalahanAset && !marker.permasalahanAset.toLowerCase().includes("clean");
+                    // Logic Update: Icon color now depends on Certificate Status
+                    // Blue (Safe) = Ada Sertifikat
+                    // Red (Problem) = Tidak Ada Sertifikat
+                    const hasCert = hasCertificate(marker);
                     const isGardu = marker.jenisBangunan === "GARDU_INDUK";
 
                     let iconToUse = towerSafe;
                     if (isGardu) {
-                        iconToUse = isProblem ? garduProblem : garduSafe;
+                        iconToUse = hasCert ? garduSafe : garduProblem;
                     } else {
-                        iconToUse = isProblem ? towerProblem : towerSafe;
+                        iconToUse = hasCert ? towerSafe : towerProblem;
                     }
 
                     return (
@@ -278,24 +297,46 @@ export default function Map({
         );
     }
 
-    return (
-        <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} className="h-full w-full rounded-xl z-0 outline-none">
-            <MapController center={focusedLocation} />
+    // Lightbox State
+    const [lightboxPhotos, setLightboxPhotos] = useState<any[] | null>(null);
 
-            {/* Tile Layer Switching */}
-            {mapStyle === "STREET" ? (
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-            ) : (
-                <TileLayer
-                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    const handleMarkerClickOverride = (marker: any) => {
+        if (marker.action === 'viewPhotos') {
+            setLightboxPhotos(marker.fotoAset);
+        } else if (onMarkerClick) {
+            onMarkerClick(marker);
+        }
+    };
+
+    return (
+        <>
+            <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} className="h-full w-full rounded-xl z-0 outline-none">
+                <MapController center={focusedLocation} />
+
+                {/* Tile Layer Switching */}
+                {mapStyle === "STREET" ? (
+                    <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                ) : (
+                    <TileLayer
+                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                    />
+                )}
+
+                <VisibleMarkers markers={validMarkers} onMarkerClick={handleMarkerClickOverride} selectedId={selectedMarkerId} />
+            </MapContainer>
+
+            {/* Global Map Lightbox */}
+            {lightboxPhotos && (
+                <PhotoLightbox
+                    photos={lightboxPhotos}
+                    initialIndex={0}
+                    onClose={() => setLightboxPhotos(null)}
                 />
             )}
-
-            <VisibleMarkers markers={validMarkers} onMarkerClick={onMarkerClick} selectedId={selectedMarkerId} />
-        </MapContainer>
+        </>
     );
 }

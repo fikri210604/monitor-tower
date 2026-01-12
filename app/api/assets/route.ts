@@ -12,14 +12,38 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const assets = await prisma.asetTower.findMany({
-      include: {
-        fotoAset: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    // Extract query parameters
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 10000); // Max 10000
+    const search = searchParams.get('search') || '';
+
+    const skip = (page - 1) * limit;
+
+    // Build where clause for search (only search string fields)
+    const whereClause = search ? {
+      OR: [
+        { deskripsi: { contains: search, mode: 'insensitive' as const } },
+        { alamat: { contains: search, mode: 'insensitive' as const } },
+        { desa: { contains: search, mode: 'insensitive' as const } },
+      ]
+    } : {};
+
+    // Fetch paginated assets and total count in parallel
+    const [assets, totalCount] = await Promise.all([
+      prisma.asetTower.findMany({
+        where: whereClause,
+        include: {
+          fotoAset: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.asetTower.count({ where: whereClause }),
+    ]);
 
     const serializedAssets = JSON.parse(JSON.stringify(assets, (key, value) =>
       typeof value === 'bigint'
@@ -27,7 +51,15 @@ export async function GET(req: NextRequest) {
         : value
     ));
 
-    return NextResponse.json(serializedAssets);
+    return NextResponse.json({
+      data: serializedAssets,
+      meta: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      }
+    });
   } catch (error) {
     console.error("GET Assets Error:", error);
     return NextResponse.json(

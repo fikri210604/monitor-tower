@@ -24,6 +24,7 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [importErrors, setImportErrors] = useState<ImportError[]>([]);
+    const [importProgress, setImportProgress] = useState<number>(0); // NEW: Progress tracking
     const [importSummary, setImportSummary] = useState<{
         successCount: number;
         skippedCount: number;
@@ -254,10 +255,16 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
         setSuccess("");
         setImportErrors([]);
         setImportSummary(null);
+        setImportProgress(0); // Reset progress
 
         console.log("🚀 Sending import request with", data.length, "rows");
         console.log("First row sample:", data[0]);
         console.log("Replace all mode:", replaceAll);
+
+        // Simulate progress (since we can't track real-time from server)
+        const progressInterval = setInterval(() => {
+            setImportProgress(prev => Math.min(prev + 5, 90)); // Max 90% until done
+        }, 300);
 
         try {
             const res = await fetch("/api/assets/import", {
@@ -268,6 +275,9 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                     replaceAll: replaceAll
                 }),
             });
+
+            clearInterval(progressInterval);
+            setImportProgress(100); // Complete
 
             const result = await res.json();
             console.log("📥 Import response:", result);
@@ -300,8 +310,10 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
         } catch (err: any) {
             console.error("❌ Import error:", err);
             setError(err.message || "Terjadi kesalahan saat import");
+            clearInterval(progressInterval);
         } finally {
             setLoading(false);
+            setTimeout(() => setImportProgress(0), 2000); // Reset after 2s
         }
     };
 
@@ -364,15 +376,31 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             </div>
 
             {data.length > 0 && !importSummary && (
-                <div className="bg-blue-50 p-3 rounded-lg text-sm text-pln-blue flex items-center justify-between">
-                    <span>{data.length} data siap diimpor.</span>
-                    <button
-                        onClick={handleImport}
-                        disabled={loading}
-                        className="bg-pln-blue text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-sky-600 transition-colors disabled:opacity-50"
-                    >
-                        {loading ? "Memproses..." : "Proses Import"}
-                    </button>
+                <div className="bg-blue-50 p-3 rounded-lg text-sm text-pln-blue space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span>{data.length} data siap diimpor.</span>
+                        <button
+                            onClick={handleImport}
+                            disabled={loading}
+                            className="bg-pln-blue text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-sky-600 transition-colors disabled:opacity-50"
+                        >
+                            {loading ? "Memproses..." : "Proses Import"}
+                        </button>
+                    </div>
+                    {loading && importProgress > 0 && (
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="font-semibold">Progress Import</span>
+                                <span className="font-bold">{importProgress}%</span>
+                            </div>
+                            <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
+                                <div
+                                    className="bg-pln-blue h-full transition-all duration-300 ease-out"
+                                    style={{ width: `${importProgress}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

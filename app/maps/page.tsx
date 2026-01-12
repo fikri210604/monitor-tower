@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
     X, ExternalLink, TowerControl, Calendar, Ruler, MapPin,
-    CheckCircle2, AlertCircle, Search, ChevronRight, Copy
+    CheckCircle2, AlertCircle, Search, ChevronRight, Copy, Zap, Info
 } from "lucide-react";
 
 // Pastikan file Map.tsx Anda sudah diupdate dengan kode dari jawaban sebelumnya
@@ -25,11 +25,12 @@ export default function MapsPage() {
     const [filterCert, setFilterCert] = useState<"ALL" | "CERTIFIED" | "UNCERTIFIED">("ALL");
     const [mapStyle, setMapStyle] = useState<"STREET" | "SATELLITE">("STREET");
     const [showFilters, setShowFilters] = useState(false);
+    const [showLegend, setShowLegend] = useState(true);
 
     useEffect(() => {
         const fetchAssets = async () => {
             try {
-                const res = await fetch("/api/assets");
+                const res = await fetch("/api/assets/markers");
                 if (res.ok) {
                     const data = await res.json();
                     setAssets(data);
@@ -323,58 +324,145 @@ export default function MapsPage() {
                 )}
             </div>
 
+            {/* --- LEGEND (KETERANGAN) --- */}
+            <div className="absolute top-4 right-4 z-[400] flex flex-col items-end gap-2 pointer-events-none">
+                {/* Toggle Button (Visible on Mobile/Tablet to save space, or just always show toggle) */}
+                <button
+                    onClick={() => setShowLegend(!showLegend)}
+                    className="w-8 h-8 bg-white/95 backdrop-blur-sm shadow-md border border-gray-200 rounded-lg flex items-center justify-center text-gray-600 hover:text-pln-blue pointer-events-auto transition-colors"
+                    title="Keterangan Icon"
+                >
+                    <Info size={18} />
+                </button>
+
+                {/* Legend Box */}
+                {showLegend && (
+                    <div className="bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-gray-200/80 w-44 pointer-events-auto animate-in fade-in slide-in-from-top-1">
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">Legenda Peta</h4>
+
+                        {/* Status Colors */}
+                        <div className="mb-3 space-y-1.5">
+                            <p className="text-[9px] font-semibold text-gray-500 mb-1">Status Sertifikat</p>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-blue-600 border border-blue-200 shadow-sm"></div>
+                                <span className="text-[10px] font-bold text-gray-700">Ada Sertifikat</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-red-500 border border-red-200 shadow-sm"></div>
+                                <span className="text-[10px] font-bold text-gray-700">Belum Sertifikat</span>
+                            </div>
+                        </div>
+
+                        {/* Asset Types */}
+                        <div className="space-y-1.5">
+                            <p className="text-[9px] font-semibold text-gray-500 mb-1">Jenis Aset</p>
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center w-4 h-4 rounded bg-gray-100/50">
+                                    <TowerControl size={14} className="text-gray-700" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-600">Tapak Tower</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center w-4 h-4 rounded bg-gray-100/50">
+                                    <Zap size={14} className="text-gray-700" />
+                                </div>
+                                <span className="text-[10px] font-medium text-gray-600">Gardu Induk</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* --- MOBILE BOTTOM SHEET (COMPACT) --- */}
             {selectedAsset && (
-                <div className="absolute z-[500] bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.15)] bottom-0 left-0 w-full rounded-t-xl border-t border-gray-200 animate-in slide-in-from-bottom-10 md:hidden pb-safe">
+                <div className="absolute z-[500] bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.15)] bottom-0 left-0 w-full rounded-t-2xl border-t border-gray-200 animate-in slide-in-from-bottom-10 md:hidden pb-safe flex flex-col max-h-[85vh]">
                     {/* Drag Handle */}
-                    <div onClick={() => setSelectedAsset(null)} className="w-full flex justify-center py-2 cursor-pointer active:bg-gray-50">
+                    <div onClick={() => setSelectedAsset(null)} className="w-full flex justify-center py-3 cursor-pointer active:bg-gray-50 shrink-0">
                         <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
                     </div>
 
-                    <div className="px-4 pb-4 space-y-3">
-                        {/* Header Mobile */}
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
-                                    <TowerControl className="w-5 h-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase">Kode SAP</p>
-                                    <h2 className="font-bold text-gray-900 text-lg leading-none">{selectedAsset.kodeSap}</h2>
-                                </div>
+                    <div className="px-5 pb-6 space-y-4 overflow-y-auto custom-scrollbar">
+                        {/* Header: Photo & Basic Info */}
+                        <div className="flex gap-4">
+                            {/* Photo Thumbnail */}
+                            <div className="w-20 h-20 shrink-0 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative">
+                                {selectedAsset.fotoAset && selectedAsset.fotoAset.length > 0 ? (
+                                    <img
+                                        src={selectedAsset.fotoAset[0].url}
+                                        alt="Aset"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                        <TowerControl size={24} />
+                                    </div>
+                                )}
                             </div>
-                            <div className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 ${hasCertificate(selectedAsset) ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                                {hasCertificate(selectedAsset) ? "Bersertifikat" : "Belum Sertifikat"}
+
+                            {/* Title & Status */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                        SAP: {selectedAsset.kodeSap}
+                                    </span>
+                                    {selectedAsset.permasalahanAset && !selectedAsset.permasalahanAset.toLowerCase().includes("clean") ? (
+                                        <span className="text-[10px] font-bold bg-red-50 text-red-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                            <AlertCircle size={10} /> Masalah
+                                        </span>
+                                    ) : (
+                                        <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                            <CheckCircle2 size={10} /> Aman
+                                        </span>
+                                    )}
+                                </div>
+                                <h2 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2 mb-1">
+                                    {selectedAsset.deskripsi || "Aset Tanpa Nama"}
+                                </h2>
+                                <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                                    <MapPin size={12} />
+                                    {selectedAsset.alamat || "Alamat kosong"}
+                                </p>
                             </div>
                         </div>
 
                         {/* Grid Data */}
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="bg-gray-50 p-2 rounded flex items-center gap-2">
-                                <Ruler size={14} className="text-gray-400" />
-                                <span className="font-semibold text-gray-700">{selectedAsset.luasTanah || "-"} m²</span>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Sertifikat</p>
+                                <div className={`text-xs font-bold flex items-center gap-1.5 ${hasCertificate(selectedAsset) ? "text-emerald-600" : "text-amber-600"}`}>
+                                    {hasCertificate(selectedAsset) ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                                    {hasCertificate(selectedAsset) ? "Ada" : "Belum"}
+                                </div>
                             </div>
-                            <div className="bg-gray-50 p-2 rounded flex items-center gap-2">
-                                <Calendar size={14} className="text-gray-400" />
-                                <span className="font-semibold text-gray-700">{selectedAsset.tahunPerolehan || "-"}</span>
+                            <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Tahun</p>
+                                <div className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                                    <Calendar size={14} className="text-gray-400" />
+                                    {selectedAsset.tahunPerolehan || "-"}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Alamat & Maps */}
-                        <div className="space-y-2">
-                            <div className="text-xs text-gray-600 bg-gray-50 p-2.5 rounded border border-gray-100 leading-snug flex items-start gap-2">
-                                <MapPin size={14} className="mt-0.5 shrink-0 text-gray-400" />
-                                {selectedAsset.alamat || "Alamat tidak tersedia"}
-                            </div>
-
+                        {/* Actions */}
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                            {/* Tombol Detail (Primary) */}
                             <a
-                                href={`https://www.google.com/maps/search/?api=1&query=${selectedAsset.koordinatY},${selectedAsset.koordinatX}`}
+                                href={`/assets/${selectedAsset.id}`}
+                                className="col-span-2 flex items-center justify-center gap-2 w-full py-3 bg-pln-blue text-white rounded-xl text-sm font-bold shadow-sm hover:bg-blue-700 active:scale-95 transition-all"
+                            >
+                                Lihat Detail Lengkap
+                                <ChevronRight size={16} />
+                            </a>
+
+                            {/* Tombol Navigasi (Secondary) */}
+                            <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${selectedAsset.koordinatY},${selectedAsset.koordinatX}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 active:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm"
+                                className="col-span-2 flex items-center justify-center gap-2 w-full py-2.5 bg-white text-gray-700 border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors"
                             >
-                                <ExternalLink size={16} />
-                                Navigasi Google Maps
+                                <ExternalLink size={14} />
+                                Rute ke Lokasi
                             </a>
                         </div>
                     </div>

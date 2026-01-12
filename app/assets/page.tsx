@@ -36,16 +36,20 @@ export default function AssetsPage() {
     };
 
     const fetchAssets = async () => {
-        setLoading(true);
         try {
-            const res = await fetch("/api/assets");
+            setLoading(true);
+            const res = await fetch("/api/assets?limit=9999"); // Fetch all assets
             if (res.ok) {
-                const data = await res.json();
-                setAssets(data);
+                const response = await res.json();
+                // Handle both old (array) and new (object with data) formats
+                const assetsData = Array.isArray(response) ? response : response.data;
+                setAssets(assetsData);
+            } else {
+                showToast("Gagal memuat data aset", "error");
             }
         } catch (error) {
-            console.error("Failed to fetch assets", error);
-            showToast("Gagal memuat data aset", "error");
+            console.error("Failed to fetch assets:", error);
+            showToast("Terjadi kesalahan saat memuat data", "error");
         } finally {
             setLoading(false);
         }
@@ -168,7 +172,7 @@ export default function AssetsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Map Section */}
-                <div className="lg:col-span-3 xl:col-span-2 h-[500px] bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
+                <div className="lg:col-span-3 xl:col-span-2 h-[300px] lg:h-[500px] bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
                     <Map markers={assets} />
                 </div>
 

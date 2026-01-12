@@ -28,7 +28,7 @@ export interface Asset {
     jenisBangunan: string | null;
     permasalahanAset: string | null;
 
-    fotoAset?: { url: string; kategori?: string }[] | null;
+    fotoAset?: { id: string; url: string; deskripsi?: string | null; kategori?: string | null }[] | null;
 }
 
 export interface AssetTableProps {

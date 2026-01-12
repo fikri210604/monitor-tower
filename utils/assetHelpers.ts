@@ -30,7 +30,7 @@ export function formatCoordinates(lat: number | null | undefined, lng: number | 
  * Filter out certificate photos from fotoAset array
  * Returns only real photos (non-certificate files)
  */
-export function filterRealPhotos(fotoAset: Asset['fotoAset']): { url: string; kategori?: string }[] {
+export function filterRealPhotos(fotoAset: Asset['fotoAset']): { id: string; url: string; kategori?: string | null; deskripsi?: string | null }[] {
     if (!fotoAset) return [];
     return fotoAset.filter(f => f.kategori !== PHOTO_CATEGORY_SERTIFIKAT);
 }

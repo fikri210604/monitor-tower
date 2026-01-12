@@ -1,13 +1,14 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown, Filter } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AssetTableProps, SortField, SortOrder } from "@/types/asset";
 import { useTableFilters } from "@/hooks/useTableFilters";
 import { useTableSort } from "@/hooks/useTableSort";
 import { usePagination } from "@/hooks/usePagination";
 import AssetTableRow from "./AssetTableRow";
 import { DEFAULT_ITEMS_PER_PAGE, ITEMS_PER_PAGE_OPTIONS, SEARCH_PLACEHOLDER, ALL_STATUS_FILTER_LABEL } from "@/constants/table";
+import PhotoLightbox from "../Shared/PhotoLightbox";
 
 /* =========================
    Main Component
@@ -66,9 +67,31 @@ export default function AssetTable({
         setStatusFilter(value);
     };
 
+    const [viewingPhotos, setViewingPhotos] = useState<{ url: string; id: string; deskripsi?: string | null }[] | null>(null);
+    const [photoIndex, setPhotoIndex] = useState(0);
+
+    // Lightbox Handlers
+    const handleViewPhotos = (photos: { url: string; id: string; deskripsi?: string | null }[]) => {
+        setViewingPhotos(photos);
+        setPhotoIndex(0);
+    };
+
+    // The following handlers are no longer needed as PhotoLightbox manages its own navigation
+    // const handleNextPhoto = (e: React.MouseEvent) => {
+    //     e.stopPropagation();
+    //     if (!viewingPhotos) return;
+    //     setPhotoIndex((prev) => (prev + 1) % viewingPhotos.length);
+    // };
+
+    // const handlePrevPhoto = (e: React.MouseEvent) => {
+    //     e.stopPropagation();
+    //     if (!viewingPhotos) return;
+    //     setPhotoIndex((prev) => (prev === 0 ? viewingPhotos.length - 1 : prev - 1));
+    // };
+
     return (
         <div className="space-y-4">
-            {/* Search and Filter Bar */}
+            {/* ... (Search and Filter Bar code remains same) ... */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                 <div className="flex flex-col sm:flex-row gap-3">
                     {/* Search */}
@@ -159,6 +182,7 @@ export default function AssetTable({
                                     onDelete={onDelete}
                                     onEdit={onEdit}
                                     onLocate={onLocate}
+                                    onViewPhotos={handleViewPhotos}
                                     userRole={userRole}
                                 />
                             ))
@@ -191,7 +215,6 @@ export default function AssetTable({
                             </button>
 
                             <div className="flex items-center gap-1">
-                                {/* Show page numbers (max 5) */}
                                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                     let pageNum;
                                     if (totalPages <= 5) {
@@ -244,6 +267,15 @@ export default function AssetTable({
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Global Lightbox Modal */}
+            {viewingPhotos && (
+                <PhotoLightbox
+                    photos={viewingPhotos}
+                    initialIndex={photoIndex}
+                    onClose={() => setViewingPhotos(null)}
+                />
             )}
         </div>
     );

@@ -1,6 +1,7 @@
 "use client";
 
-import { Trash2, Edit, MapPin, Image as ImageIcon, FileText } from "lucide-react";
+import Link from "next/link";
+import { Trash2, Edit, MapPin, Image as ImageIcon, FileText, Eye } from "lucide-react";
 import { Asset } from "@/types/asset";
 import { formatAddress, formatCoordinates, filterRealPhotos, hasRealPhotos, hasCertificate, isCleanStatus, formatNumber, getDisplayValue } from "@/utils/assetHelpers";
 
@@ -9,6 +10,7 @@ interface AssetTableRowProps {
     onDelete: (id: string) => void;
     onEdit: (asset: Asset) => void;
     onLocate: (asset: Asset) => void;
+    onViewPhotos: (photos: { url: string; id: string }[]) => void;
     userRole?: string;
 }
 
@@ -17,6 +19,7 @@ export default function AssetTableRow({
     onDelete,
     onEdit,
     onLocate,
+    onViewPhotos,
     userRole,
 }: AssetTableRowProps) {
     const realPhotos = filterRealPhotos(asset.fotoAset);
@@ -82,7 +85,7 @@ export default function AssetTableRow({
                     <IconButton
                         title={`Lihat Foto (${realPhotos.length})`}
                         color="blue"
-                        onClick={() => window.open(realPhotos[0].url, "_blank")}
+                        onClick={() => onViewPhotos(realPhotos)}
                     >
                         <ImageIcon className="w-4 h-4" />
                     </IconButton>
@@ -95,6 +98,14 @@ export default function AssetTableRow({
 
             {/* Aksi */}
             <td className="px-4 py-3 flex justify-end gap-2">
+                <Link
+                    href={`/assets/${asset.id}`}
+                    className="p-1.5 rounded-lg transition-colors text-indigo-600 hover:bg-indigo-50"
+                    title="Lihat Detail"
+                >
+                    <Eye className="w-4 h-4" />
+                </Link>
+
                 <IconAction
                     title="Lihat di Peta"
                     onClick={() => onLocate(asset)}
