@@ -42,7 +42,7 @@ export default function MapsPage() {
         fetchAssets();
     }, []);
 
-    const hasCertificate = (a: any) => a.nomorSertifikat && a.nomorSertifikat !== "-" && a.nomorSertifikat !== "";
+    const hasCertificate = (a: any) => a.hasCertificate ?? (a.nomorSertifikat && a.nomorSertifikat !== "-" && a.nomorSertifikat !== "");
 
     const filteredAssets = useMemo(() => {
         // First filter by search

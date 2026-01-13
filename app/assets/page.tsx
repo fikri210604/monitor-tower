@@ -203,7 +203,7 @@ export default function AssetsPage() {
                                             <p className="text-xs text-gray-500 line-clamp-1">{asset.alamat}</p>
                                         </div>
                                         <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full" suppressHydrationWarning>
-                                            {new Date(asset.dibuatPada).toLocaleDateString("id-ID")}
+                                            {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString("id-ID") : "-"}
                                         </span>
                                     </div>
                                 </div>

@@ -43,22 +43,45 @@ export default function AssetTableRow({
                 {getDisplayValue(asset.tahunPerolehan)}
             </td>
 
-            <td className="px-4 py-3 text-gray-600 truncate max-w-xs" title={shortAddress}>
-                {shortAddress}
+            {/* Alamat */}
+            <td className="px-4 py-3 text-gray-600 truncate max-w-xs" title={asset.alamat || ""}>
+                {asset.alamat || "-"}
             </td>
 
-            <td className="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
-                {formatCoordinates(asset.koordinatY, asset.koordinatX)}
+            {/* Desa */}
+            <td className="px-4 py-3 text-gray-600">
+                {asset.desa || "-"}
+            </td>
+
+            {/* Kecamatan */}
+            <td className="px-4 py-3 text-gray-600">
+                {asset.kecamatan || "-"}
+            </td>
+
+            {/* Kabupaten */}
+            <td className="px-4 py-3 text-gray-600">
+                {asset.kabupaten || "-"}
+            </td>
+
+            {/* Provinsi */}
+            <td className="px-4 py-3 text-gray-600">
+                {asset.provinsi || "-"}
             </td>
 
             {/* Nomor Sertifikat (Just Text) */}
             <td className="px-4 py-3 text-gray-600 font-medium">
-                {getDisplayValue(asset.nomorSertifikat)}
+                {userRole === "OPERATOR" ? (
+                    <span className="text-gray-400 italic text-xs">Restricted</span>
+                ) : (
+                    getDisplayValue(asset.nomorSertifikat)
+                )}
             </td>
 
             {/* File Sertifikat (Link/Download) */}
             <td className="px-4 py-3">
-                {hasSertifikat ? (
+                {userRole === "OPERATOR" ? (
+                    <span className="text-gray-400 text-xs">-</span>
+                ) : hasSertifikat ? (
                     <a
                         href={asset.linkSertifikat!}
                         target="_blank"

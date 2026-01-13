@@ -51,7 +51,7 @@ export default function Map({
         fixLeafletIcon();
     }, []);
 
-    const hasCertificate = (m: any) => m.nomorSertifikat && m.nomorSertifikat !== "-" && m.nomorSertifikat !== "";
+    const hasCertificate = (m: any) => m.hasCertificate ?? (m.nomorSertifikat && m.nomorSertifikat !== "-" && m.nomorSertifikat !== "");
     const handleCopy = (txt: string) => { navigator.clipboard.writeText(txt); alert("Disalin!"); };
 
     // Define Icons
@@ -308,9 +308,11 @@ export default function Map({
         }
     };
 
+    const mapId = useMemo(() => "map-" + Math.random().toString(36).substr(2, 9), []);
+
     return (
         <>
-            <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} className="h-full w-full rounded-xl z-0 outline-none">
+            <MapContainer id={mapId} key={mapId} center={center} zoom={zoom} scrollWheelZoom={true} className="h-full w-full rounded-xl z-0 outline-none">
                 <MapController center={focusedLocation} />
 
                 {/* Tile Layer Switching */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -37,13 +38,35 @@ export async function POST(req: NextRequest) {
       console.log("🗑️  Deleting all existing assets...");
       const deleteResult = await prisma.asetTower.deleteMany({});
       console.log(`✅ Deleted ${deleteResult.count} existing assets`);
+      await logActivity((session.user as any).id, "DELETE_ASSET", {
+        action: "DELETE_ALL_BEFORE_IMPORT",
+        count: deleteResult.count
+      });
     }
 
     let successCount = 0;
-    let skippedCount = 0;
     let errorCount = 0;
     let errors: Array<{ row: number, kodeSap?: any, reason: string }> = [];
 
+    // 1. Fetch all existing IDs for mapping (Performance optimization)
+    const existingAssets = await prisma.asetTower.findMany({
+      select: { id: true, kodeSap: true }
+    });
+
+    // Improved Map: Store ARRAY of IDs for each kodeSap to handle duplicates
+    // Map<kodeSap, string[]>
+    const existingMap = new Map<number, string[]>();
+    existingAssets.forEach(a => {
+      if (!existingMap.has(a.kodeSap)) {
+        existingMap.set(a.kodeSap, []);
+      }
+      existingMap.get(a.kodeSap)?.push(a.id);
+    });
+
+    const toCreate: any[] = [];
+    const toUpdate: any[] = [];
+
+    // 2. Process rows and split into Create vs Update buckets
     for (let i = 0; i < rows.length; i++) {
       const item = rows[i];
       const rowNumber = i + 1;
@@ -52,56 +75,121 @@ export async function POST(req: NextRequest) {
         // Auto-generate kodeSap if missing
         if (!item.kodeSap) {
           item.kodeSap = 10000 + rowNumber;
-          console.log(`📝 Auto-generated kodeSap for row ${rowNumber}: ${item.kodeSap}`);
         }
 
-        // Set default enum values
+        // Defaults
         if (!item.jenisBangunan) item.jenisBangunan = "TAPAK_TOWER";
         if (!item.penguasaanTanah) item.penguasaanTanah = "DIKUASAI";
         if (!item.permasalahanAset) item.permasalahanAset = "CLEAN_AND_CLEAR";
 
-        // Required fields validation
-        // Coordinates are now optional
-        if (item.koordinatX === null || item.koordinatX === undefined || item.koordinatX === "") item.koordinatX = null;
-        if (item.koordinatY === null || item.koordinatY === undefined || item.koordinatY === "") item.koordinatY = null;
+        // Coords
+        if (item.koordinatX === "" || item.koordinatX == null) item.koordinatX = null;
+        if (item.koordinatY === "" || item.koordinatY == null) item.koordinatY = null;
 
-        // Enum validation
+        // Enums
         const validJenisBangunan = ["GARDU_INDUK", "TAPAK_TOWER"];
         const validPenguasaanTanah = ["DIKUASAI", "TIDAK_DIKUASAI"];
-
         if (!validJenisBangunan.includes(item.jenisBangunan)) item.jenisBangunan = "TAPAK_TOWER";
         if (!validPenguasaanTanah.includes(item.penguasaanTanah)) item.penguasaanTanah = "DIKUASAI";
-        // Removed validation for permasalahanAset as it is now a String
 
-
-        await prisma.asetTower.create({
-          data: {
-            kodeSap: Number(item.kodeSap),
-            kodeUnit: item.kodeUnit ? Number(item.kodeUnit) : 3215,
-            deskripsi: item.deskripsi || null,
-            luasTanah: item.luasTanah ? parseFloat(item.luasTanah) : null,
-            tahunPerolehan: item.tahunPerolehan ? parseInt(item.tahunPerolehan) : null,
-            alamat: item.alamat || null,
-            desa: item.desa || null,
-            kecamatan: item.kecamatan || null,
-            kabupaten: item.kabupaten || null,
-            provinsi: item.provinsi || "LAMPUNG",
-            koordinatX: item.koordinatX !== null ? parseFloat(item.koordinatX) : null,
-            koordinatY: item.koordinatY !== null ? parseFloat(item.koordinatY) : null,
-            jenisDokumen: item.jenisDokumen || null,
-            nomorSertifikat: item.nomorSertifikat || null,
-            penguasaanTanah: item.penguasaanTanah,
-            jenisBangunan: item.jenisBangunan,
-            permasalahanAset: item.permasalahanAset,
+        // Date Parsing
+        const parseExcelDate = (dateVal: any): Date | null => {
+          if (!dateVal) return null;
+          if (typeof dateVal === 'number') return new Date((dateVal - 25569) * 86400 * 1000);
+          const strVal = String(dateVal).trim();
+          const ddmmyyyy = strVal.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+          if (ddmmyyyy) {
+            const day = parseInt(ddmmyyyy[1], 10);
+            const month = parseInt(ddmmyyyy[2], 10) - 1;
+            const year = parseInt(ddmmyyyy[3], 10);
+            return new Date(year, month, day);
           }
-        });
+          const isoDate = new Date(strVal);
+          return !isNaN(isoDate.getTime()) ? isoDate : null;
+        };
 
-        successCount++;
+        const tanggalAwal = parseExcelDate(item.tanggalAwalSertifikat);
+        const tanggalAkhir = parseExcelDate(item.tanggalAkhirSertifikat);
+
+        const assetData = {
+          kodeSap: Number(item.kodeSap),
+          kodeUnit: item.kodeUnit ? Number(item.kodeUnit) : 3215,
+          deskripsi: item.deskripsi || null,
+          luasTanah: item.luasTanah ? parseFloat(item.luasTanah) : null,
+          tahunPerolehan: item.tahunPerolehan ? parseInt(item.tahunPerolehan) : null,
+          alamat: item.alamat || null,
+          desa: item.desa || null,
+          kecamatan: item.kecamatan || null,
+          kabupaten: item.kabupaten || null,
+          provinsi: item.provinsi || "LAMPUNG",
+          koordinatX: item.koordinatX !== null ? parseFloat(item.koordinatX) : null,
+          koordinatY: item.koordinatY !== null ? parseFloat(item.koordinatY) : null,
+          jenisDokumen: item.jenisDokumen || null,
+          nomorSertifikat: item.nomorSertifikat || null,
+          linkSertifikat: item.linkSertifikat || null,
+          tanggalAwalSertifikat: tanggalAwal,
+          tanggalAkhirSertifikat: tanggalAkhir,
+          penguasaanTanah: item.penguasaanTanah,
+          jenisBangunan: item.jenisBangunan,
+          permasalahanAset: item.permasalahanAset,
+        };
+
+        // Smart Matching Logic:
+        // Check if there are any available IDs for this kodeSap
+        const availableIds = existingMap.get(assetData.kodeSap);
+
+        if (availableIds && availableIds.length > 0) {
+          // CONSUME one ID from the queue
+          const targetId = availableIds.shift(); // take the first one
+
+          // Prepare update
+          toUpdate.push({
+            id: targetId,
+            data: assetData
+          });
+        } else {
+          // No existing ID matched (or all consumed), so CREATE new
+          toCreate.push(assetData);
+        }
+
       } catch (error: any) {
         errorCount++;
-        const reason = error.message || "Database error";
+        const reason = error.message || "Data preparation error";
         console.error(`❌ Row ${rowNumber}: ${reason}`);
         errors.push({ row: rowNumber, kodeSap: item.kodeSap, reason });
+      }
+    }
+
+    // 3. Execute Bulk Operations
+    console.log(`⚡ Batch Processing: ${toCreate.length} Creates, ${toUpdate.length} Updates`);
+
+    // A. Bulk Create
+    if (toCreate.length > 0) {
+      const createRes = await prisma.asetTower.createMany({
+        data: toCreate,
+        skipDuplicates: true // Safety
+      });
+      console.log(`✅ Created ${createRes.count} new assets`);
+      successCount += createRes.count;
+    }
+
+    // B. Parallel Updates (Using Promise.all)
+    if (toUpdate.length > 0) {
+      // Process in chunks of 50 to avoid connection limits
+      const chunkSize = 50;
+      for (let i = 0; i < toUpdate.length; i += chunkSize) {
+        const chunk = toUpdate.slice(i, i + chunkSize);
+        await Promise.all(chunk.map(item =>
+          prisma.asetTower.update({
+            where: { id: item.id },
+            data: item.data
+          }).catch(e => {
+            console.error(`Update failed for ${item.data.kodeSap}:`, e);
+            errorCount++;
+            errors.push({ row: 0, kodeSap: item.data.kodeSap, reason: "Update Failed" });
+          })
+        ));
+        successCount += chunk.length;
       }
     }
 
@@ -114,10 +202,21 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // Log Activity
+    if (successCount > 0) {
+      await logActivity((session.user as any).id, "IMPORT_EXCEL", {
+        action: replaceAll ? "REPLACE_ALL" : "UPDATE_EXISTING",
+        success: successCount,
+        created: toCreate.length,
+        updated: toUpdate.length,
+        failed: errorCount,
+        totalRows: rows.length
+      });
+    }
+
     return NextResponse.json({
       message: "Import completed",
       successCount,
-      skippedCount,
       errorCount,
       totalRows: rows.length,
       errors: errors.length > 0 ? errors.slice(0, 10) : []

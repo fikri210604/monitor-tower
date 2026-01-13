@@ -42,6 +42,7 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
 
         // Files
         fotoUrl: "",
+        fotoDokumentasiUrl: "", // New state for documentation photo
         sertifikatUrl: "",
     });
     const [loading, setLoading] = useState(false);
@@ -49,8 +50,10 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
 
     useEffect(() => {
         if (initialData) {
-            // Check for existing photo
-            const existingFoto = initialData.fotoAset?.find((f: any) => f.kategori !== "SERTIFIKAT")?.url || "";
+            // Check for existing photo (ASET)
+            const existingFoto = initialData.fotoAset?.find((f: any) => f.kategori !== "SERTIFIKAT" && f.kategori !== "DOKUMENTASI")?.url || "";
+            // Check for existing documentation photo (DOKUMENTASI)
+            const existingFotoDokumentasi = initialData.fotoAset?.find((f: any) => f.kategori === "DOKUMENTASI")?.url || "";
             // Check for existing sertifikat
             const existingSertifikat = initialData.linkSertifikat || initialData.fotoAset?.find((f: any) => f.kategori === "SERTIFIKAT")?.url || "";
 
@@ -85,6 +88,7 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
 
                 // Files
                 fotoUrl: existingFoto,
+                fotoDokumentasiUrl: existingFotoDokumentasi,
                 sertifikatUrl: existingSertifikat,
             });
         } else {
@@ -119,12 +123,13 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
 
                 // Files
                 fotoUrl: "",
+                fotoDokumentasiUrl: "",
                 sertifikatUrl: "",
             });
         }
     }, [initialData, isOpen]);
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "foto" | "sertifikat") => {
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "foto" | "dokumen" | "sertifikat") => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -142,6 +147,8 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
             if (res.ok) {
                 if (type === "foto") {
                     setFormData(prev => ({ ...prev, fotoUrl: result.url }));
+                } else if (type === "dokumen") {
+                    setFormData(prev => ({ ...prev, fotoDokumentasiUrl: result.url }));
                 } else {
                     // Sync both sertifikatUrl (for detailed state) and linkSertifikat (for DB)
                     setFormData(prev => ({ ...prev, sertifikatUrl: result.url, linkSertifikat: result.url }));
@@ -475,8 +482,9 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
                                             <ImageIcon className="w-5 h-5 text-pln-blue" />
                                         </div>
                                         <span className="text-xs font-semibold text-gray-600">
-                                            {formData.fotoUrl ? "Ganti Foto" : "Upload Foto Aset"}
+                                            {formData.fotoUrl ? "Ganti Foto Aset" : "Upload Foto Aset"}
                                         </span>
+                                        <span className="text-[10px] text-red-400 block mt-1">(Rahasia - Admin Only)</span>
                                     </div>
                                     <input
                                         type="file"
@@ -491,6 +499,39 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
                                         <button
                                             type="button"
                                             onClick={() => setFormData(p => ({ ...p, fotoUrl: "" }))}
+                                            className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Foto Dokumentasi Upload */}
+                            <div className="border border-dashed border-gray-300 rounded-xl p-4 text-center hover:bg-gray-50 transition-colors relative">
+                                <label className="cursor-pointer block">
+                                    <div className="flex flex-col items-center">
+                                        <div className="bg-purple-50 p-2 rounded-full mb-2">
+                                            <ImageIcon className="w-5 h-5 text-purple-600" />
+                                        </div>
+                                        <span className="text-xs font-semibold text-gray-600">
+                                            {formData.fotoDokumentasiUrl ? "Ganti Foto Dokumentasi" : "Upload Foto Dokumentasi"}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400 block mt-1">(Bisa dilihat Operator)</span>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => handleUpload(e, "dokumen")}
+                                    />
+                                </label>
+                                {formData.fotoDokumentasiUrl && (
+                                    <div className="mt-2 relative group">
+                                        <img src={formData.fotoDokumentasiUrl} alt="Preview" className="h-16 w-full object-cover rounded-md" />
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(p => ({ ...p, fotoDokumentasiUrl: "" }))}
                                             className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             <X className="w-3 h-3" />

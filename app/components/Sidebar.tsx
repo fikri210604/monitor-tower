@@ -4,7 +4,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Home, User, LogOut, FileText, AlertTriangle, MapPinned, Users } from "lucide-react";
+import { Home, User, LogOut, FileText, AlertTriangle, MapPinned, Users, History } from "lucide-react";
 import logoPln from "../../public/logopln.jpg";
 
 export default function Sidebar({ className = "", onClose }: { className?: string; onClose?: () => void }) {
@@ -30,6 +30,11 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
     // Add Users menu only for MASTER
     if (userRole === "MASTER") {
         links.push({ href: "/users", label: "Manajemen User", icon: Users });
+    }
+
+    // Add Audit Log for MASTER and ADMIN
+    if (userRole === "MASTER" || userRole === "ADMIN") {
+        links.push({ href: "/history", label: "Riwayat Aktivitas", icon: History });
     }
 
     if (status === "unauthenticated") return null;

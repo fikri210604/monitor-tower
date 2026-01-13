@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,34 @@ export async function GET(req: NextRequest) {
       prisma.asetTower.count({ where: whereClause }),
     ]);
 
-    const serializedAssets = JSON.parse(JSON.stringify(assets, (key, value) =>
+    // Check role and filter photos
+    const role = (session.user as any).role;
+
+    const processedAssets = assets.map(asset => {
+      // If OPERATOR, filter out 'ASET' photos
+      // We keep 'DOKUMENTASI' and others (like null/undefined if we want to be permissive, 
+      // but based on plan we ONLY show DOKUMENTASI if we want strictness. 
+      // Plan: "If OPERATOR, filter the fotoAset array to exclude kategori === 'ASET'"
+
+      let visiblePhotos = asset.fotoAset;
+      let maskedNomorSertifikat = asset.nomorSertifikat;
+      let maskedLinkSertifikat = asset.linkSertifikat;
+
+      if (role === 'OPERATOR') {
+        visiblePhotos = asset.fotoAset.filter(f => f.kategori !== 'ASET' && f.kategori !== null);
+        maskedNomorSertifikat = null; // Mask sensitive data
+        maskedLinkSertifikat = null; // Mask sensitive data
+      }
+
+      return {
+        ...asset,
+        fotoAset: visiblePhotos,
+        nomorSertifikat: maskedNomorSertifikat,
+        linkSertifikat: maskedLinkSertifikat
+      };
+    });
+
+    const serializedAssets = JSON.parse(JSON.stringify(processedAssets, (key, value) =>
       typeof value === 'bigint'
         ? value.toString()
         : value
@@ -132,6 +160,7 @@ export async function POST(req: NextRequest) {
               {
                 url: body.fotoUrl,
                 deskripsi: "Foto Aset",
+                kategori: "ASET" // Explicitly categorize
               }
             ]
           }
@@ -140,6 +169,23 @@ export async function POST(req: NextRequest) {
       include: {
         fotoAset: true,
       },
+    });
+
+    // Handle Documentation Photo if exists
+    if (body.fotoDokumentasiUrl) {
+      await prisma.fotoAset.create({
+        data: {
+          url: body.fotoDokumentasiUrl,
+          deskripsi: "Foto Dokumentasi",
+          kategori: "DOKUMENTASI",
+          asetTowerId: newAsset.id
+        }
+      });
+    }
+
+    await logActivity((session.user as any).id, "CREATE_ASSET", {
+      sap: newAsset.kodeSap,
+      deskripsi: newAsset.deskripsi
     });
 
     const serializedAsset = JSON.parse(JSON.stringify(newAsset, (key, value) =>

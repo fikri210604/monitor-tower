@@ -129,6 +129,10 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
     // Desa
     "DESA": "desa",
     "KELURAHAN": "desa",
+    "DESA/KELURAHAN": "desa",
+    "DESA / KELURAHAN": "desa",
+    "DESA/ KELURAHAN": "desa", // Space after slash
+    "KELURAHAN/DESA": "desa",
 
     // Kecamatan
     "KECAMATAN": "kecamatan",
@@ -136,6 +140,10 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
     // Kabupaten
     "KABUPATEN": "kabupaten",
     "KOTA": "kabupaten",
+    "KABUPATEN/KOTA": "kabupaten",
+    "KABUPATEN / KOTA": "kabupaten",
+    "KABUPATEN/ KOTA": "kabupaten", // Space after slash
+    "KOTA/KABUPATEN": "kabupaten",
 
     // Provinsi
     "PROVINSI": "provinsi",
@@ -184,9 +192,16 @@ export const COLUMN_MAPPINGS: Record<string, string> = {
     "TANGGAL AWAL SERTIFIKAT": "tanggalAwalSertifikat",
     "TANGGALAWALSERTIFIKAT": "tanggalAwalSertifikat",
     "TGL AWAL SERTIFIKAT": "tanggalAwalSertifikat",
+    "TANGGAL BERLAKU SERTIPIKAT DARI (DD/MM/XXXX)": "tanggalAwalSertifikat",
+    "TANGGAL BERLAKU SERTIPIKAT DARI": "tanggalAwalSertifikat",
+    "BERLAKU DARI": "tanggalAwalSertifikat",
+
     "TANGGAL AKHIR SERTIFIKAT": "tanggalAkhirSertifikat",
     "TANGGALAKHIRSERTIFIKAT": "tanggalAkhirSertifikat",
     "TGL AKHIR SERTIFIKAT": "tanggalAkhirSertifikat",
+    "TANGGAL BERLAKU SERTIPIKAT SAMPAI (DD/MM/XXXX)": "tanggalAkhirSertifikat",
+    "TANGGAL BERLAKU SERTIPIKAT SAMPAI": "tanggalAkhirSertifikat",
+    "BERLAKU SAMPAI": "tanggalAkhirSertifikat",
 
     // Jenis Bangunan
     "JENIS BANGUNAN": "jenisBangunan",

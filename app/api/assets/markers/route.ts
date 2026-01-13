@@ -46,7 +46,13 @@ export async function GET(req: NextRequest) {
                 : value
         ));
 
-        return NextResponse.json(serializedMarkers);
+        // Add computed field hasCertificate for frontend coloring (safe for all roles)
+        const enrichedMarkers = serializedMarkers.map((m: any) => ({
+            ...m,
+            hasCertificate: !!(m.nomorSertifikat && m.nomorSertifikat !== "-" && m.nomorSertifikat !== "")
+        }));
+
+        return NextResponse.json(enrichedMarkers);
     } catch (error) {
         console.error("GET Markers Error:", error);
         return NextResponse.json(

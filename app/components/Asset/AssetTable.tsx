@@ -155,8 +155,11 @@ export default function AssetTable({
                             <SortableHeader field="deskripsi" label="Deskripsi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="luasTanah" label="Luas (m²)" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="tahunPerolehan" label="Tahun" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                            <th className="px-4 py-3">Alamat</th>
-                            <SortableHeader field="lokasi" label="Lokasi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="alamat" label="Alamat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="desa" label="Desa/Kel" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="kecamatan" label="Kecamatan" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="kabupaten" label="Kabupaten/Kota" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="provinsi" label="Provinsi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="nomorSertifikat" label="Nomor Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="jenisDokumen" label="File Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="permasalahanAset" label="Masalah" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
@@ -168,7 +171,7 @@ export default function AssetTable({
                     <tbody className="divide-y divide-gray-100">
                         {paginatedItems.length === 0 ? (
                             <tr>
-                                <td colSpan={11} className="px-4 py-8 text-center text-gray-400">
+                                <td colSpan={14} className="px-4 py-8 text-center text-gray-400">
                                     {hasActiveFilters
                                         ? "Tidak ada data yang sesuai dengan filter."
                                         : "Belum ada data aset."}

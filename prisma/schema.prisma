@@ -15,6 +15,7 @@ model User {
   role      Role     @default(OPERATOR)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  activities ActivityLog[]
 
   @@map("users")
 }
@@ -89,4 +90,17 @@ enum JenisBangunan {
 enum PermasalahanAset {
   CLEAN_AND_CLEAR
   TUMPAK_TINDIH
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // e.g. "IMPORT", "CREATE", "UPDATE", "DELETE"
+  details   String?  // JSON string or text description
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
 }

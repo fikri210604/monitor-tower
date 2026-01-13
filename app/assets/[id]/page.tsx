@@ -32,6 +32,11 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
     const hasCertificate = asset.nomorSertifikat && asset.nomorSertifikat !== "-" && asset.nomorSertifikat !== "";
     const isProblem = asset.permasalahanAset && !asset.permasalahanAset.toLowerCase().includes("clean");
 
+    // Filter photos for Operator
+    const filteredPhotos = isOperator
+        ? asset.fotoAset.filter(f => f.kategori !== "ASET" && f.kategori !== null)
+        : asset.fotoAset;
+
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
             {/* Header / Nav */}
@@ -93,7 +98,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
                     {/* Photos */}
                     <AssetGallery
                         assetId={asset.id}
-                        initialPhotos={asset.fotoAset}
+                        initialPhotos={filteredPhotos}
                         canEdit={canEdit}
                     />
 
@@ -188,13 +193,13 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
                                     <div>
                                         <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tgl Terbit</label>
                                         <p className="text-sm font-semibold text-gray-600">
-                                            {asset.tanggalAwalSertifikat ? new Date(asset.tanggalAwalSertifikat).toLocaleDateString("id-ID") : "-"}
+                                            {asset.tanggalAwalSertifikat ? new Date(asset.tanggalAwalSertifikat).toLocaleDateString("id-ID", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
                                         </p>
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tgl Berakhir</label>
                                         <p className="text-sm font-semibold text-gray-600">
-                                            {asset.tanggalAkhirSertifikat ? new Date(asset.tanggalAkhirSertifikat).toLocaleDateString("id-ID") : "-"}
+                                            {asset.tanggalAkhirSertifikat ? new Date(asset.tanggalAkhirSertifikat).toLocaleDateString("id-ID", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
                                         </p>
                                     </div>
                                 </div>
