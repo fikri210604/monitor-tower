@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import Link from "next/link";
 import { Lock, User, Eye, EyeOff } from "lucide-react";
-import logoPln from "../../../public/logopln.jpg";
+import logoPln from "../../../public/logopln.png";
 
 export default function SignIn() {
     const router = useRouter();
