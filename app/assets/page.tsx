@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useSession } from "next-auth/react";
 import ExcelImport from "@/app/components/Asset/ExcelImport";
 import AssetTable from "@/app/components/Asset/AssetTable";
 import AssetFormModal from "@/app/components/Asset/AssetFormModal";
@@ -15,6 +16,10 @@ const Map = dynamic(() => import("@/app/components/Map"), {
 });
 
 export default function AssetsPage() {
+    const { data: session } = useSession();
+    const userRole = (session?.user as any)?.role;
+    const canManage = userRole === "MASTER" || userRole === "ADMIN";
+
     const [assets, setAssets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showImport, setShowImport] = useState(false);
@@ -31,16 +36,20 @@ export default function AssetsPage() {
     };
 
     const fetchAssets = async () => {
-        setLoading(true);
         try {
-            const res = await fetch("/api/assets");
+            setLoading(true);
+            const res = await fetch("/api/assets?limit=9999"); // Fetch all assets
             if (res.ok) {
-                const data = await res.json();
-                setAssets(data);
+                const response = await res.json();
+                // Handle both old (array) and new (object with data) formats
+                const assetsData = Array.isArray(response) ? response : response.data;
+                setAssets(assetsData);
+            } else {
+                showToast("Gagal memuat data aset", "error");
             }
         } catch (error) {
-            console.error("Failed to fetch assets", error);
-            showToast("Gagal memuat data aset", "error");
+            console.error("Failed to fetch assets:", error);
+            showToast("Terjadi kesalahan saat memuat data", "error");
         } finally {
             setLoading(false);
         }
@@ -130,20 +139,24 @@ export default function AssetsPage() {
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
-                    <button
-                        onClick={() => setShowImport(!showImport)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showImport ? "bg-gray-200 text-gray-700" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
-                            }`}
-                    >
-                        {showImport ? "Tutup Import" : "Import Excel"}
-                    </button>
-                    <button
-                        onClick={handleCreate}
-                        className="flex items-center gap-2 px-4 py-2 bg-pln-blue text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm font-medium"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Tambah Manual
-                    </button>
+                    {canManage && (
+                        <>
+                            <button
+                                onClick={() => setShowImport(!showImport)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showImport ? "bg-gray-200 text-gray-700" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                                    }`}
+                            >
+                                {showImport ? "Tutup Import" : "Import Excel"}
+                            </button>
+                            <button
+                                onClick={handleCreate}
+                                className="flex items-center gap-2 px-4 py-2 bg-pln-blue text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm font-medium"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Tambah Manual
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -159,7 +172,7 @@ export default function AssetsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Map Section */}
-                <div className="lg:col-span-3 xl:col-span-2 h-[500px] bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
+                <div className="lg:col-span-3 xl:col-span-2 h-[300px] lg:h-[500px] bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
                     <Map markers={assets} />
                 </div>
 
@@ -189,8 +202,8 @@ export default function AssetsPage() {
                                             <p className="font-bold text-gray-800 text-sm">{asset.kodeSap}</p>
                                             <p className="text-xs text-gray-500 line-clamp-1">{asset.alamat}</p>
                                         </div>
-                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                                            {new Date(asset.dibuatPada).toLocaleDateString()}
+                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full" suppressHydrationWarning>
+                                            {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString("id-ID") : "-"}
                                         </span>
                                     </div>
                                 </div>
@@ -203,7 +216,13 @@ export default function AssetsPage() {
             {/* Full Table Section */}
             <div>
                 <h3 className="font-bold text-gray-800 mb-4 text-lg">Daftar Aset Lengkap</h3>
-                <AssetTable assets={assets} onDelete={handleDelete} onEdit={handleEdit} onLocate={handleLocate} />
+                <AssetTable
+                    assets={assets}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    onLocate={handleLocate}
+                    userRole={(session?.user as any)?.role}
+                />
             </div>
 
             {/* Modal */}

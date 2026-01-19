@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import NextImage from "next/image";
 import Link from "next/link";
 import { Lock, User, Eye, EyeOff } from "lucide-react";
+import logoPln from "../../../public/logopln.png";
 
 export default function SignIn() {
     const router = useRouter();
@@ -61,8 +62,8 @@ export default function SignIn() {
 
             <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden relative z-10">
                 <div className="p-8 text-center bg-gray-50 border-b border-gray-100">
-                    <div className="w-16 h-16 bg-pln-yellow mx-auto rounded-xl flex items-center justify-center shadow-lg mb-4">
-                        <span className="text-3xl font-bold text-pln-blue">⚡</span>
+                    <div className="w-24 h-24 mx-auto mb-4 relative flex items-center justify-center">
+                        <NextImage src={logoPln} alt="Logo PLN" className="w-full h-full object-contain" priority />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800">PLN Asset Tower</h2>
                     <p className="text-gray-500 text-sm mt-1">Masuk untuk mengakses aplikasi</p>

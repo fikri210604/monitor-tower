@@ -12,36 +12,60 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Create Users
-  const password = await bcrypt.hash("123456", 10);
+  // Create Users
+  const masterPassword = await bcrypt.hash("master123", 10);
+  const adminPassword = await bcrypt.hash("admin123", 10);
+  const operatorPassword = await bcrypt.hash("operator123", 10);
+
+  const master = await prisma.user.upsert({
+    where: { username: 'master' },
+    update: {
+      password: masterPassword,
+      role: Role.MASTER,
+    },
+    create: {
+      name: 'Master Account',
+      username: 'master',
+      password: masterPassword,
+      role: Role.MASTER,
+    },
+  });
 
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: {
+      password: adminPassword,
+      role: Role.ADMIN,
+    },
     create: {
       name: 'Admin Pusat',
       username: 'admin',
-      password,
-      role: Role.SUPER_ADMIN,
+      password: adminPassword,
+      role: Role.ADMIN,
     },
   });
 
   const operator = await prisma.user.upsert({
     where: { username: 'operator' },
-    update: {},
+    update: {
+      password: operatorPassword,
+      role: Role.OPERATOR,
+    },
     create: {
       name: 'Operator Wilayah',
       username: 'operator',
-      password,
+      password: operatorPassword,
       role: Role.OPERATOR,
     },
   });
 
+  console.log('✅ Master user ready:', master.username);
   console.log('✅ Admin user ready:', admin.username);
   console.log('✅ Operator user ready:', operator.username);
 
-  // Clean existing assets
-  console.log('🧹 Membersihkan data aset lama...');
-  await prisma.asetTower.deleteMany();
+  // Clean existing assets - COMMENTED OUT TO PRESERVE DATA
+  // console.log('🧹 Membersihkan data aset lama...');
+  // await prisma.asetTower.deleteMany();
 
   // Seed Assets
   const aset1 = await prisma.asetTower.create({
