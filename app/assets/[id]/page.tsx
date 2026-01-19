@@ -138,13 +138,28 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
                                 </p>
                             </div>
                         </div>
+                        <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+                            <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-1">Alamat Lengkap</label>
+                            <p className="font-medium text-gray-700 leading-relaxed flex items-start gap-2">
+                                <MapPin size={18} className="text-pln-blue mt-0.5 flex-shrink-0" />
+                                <span>
+                                    {[
+                                        asset.alamat,
+                                        asset.desa && `Desa ${asset.desa}`,
+                                        asset.kecamatan && `Kec. ${asset.kecamatan}`,
+                                        asset.kabupaten && `Kab. ${asset.kabupaten}`,
+                                        asset.provinsi && `Prov. ${asset.provinsi}`
+                                    ].filter(Boolean).join(", ") || "Alamat belum dilengkapi"}
+                                </span>
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </div >
 
                 {/* RIGHT COL: Map & Legal */}
-                <div className="space-y-6">
+                < div className="space-y-6" >
                     {/* Maps Preview */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    < div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" >
                         <div className="p-4 border-b border-gray-100 font-bold text-gray-800 flex items-center gap-2">
                             <MapPin size={18} className="text-red-500" />
                             Lokasi
@@ -171,61 +186,63 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
                         <div className="p-4 bg-gray-50 text-xs text-gray-600 font-mono text-center">
                             Lat: {asset.koordinatY}, Long: {asset.koordinatX}
                         </div>
-                    </div>
+                    </div >
 
                     {/* LEGAL SECTION - RESTRICTED */}
-                    {!isOperator ? (
-                        <div className="bg-white rounded-2xl shadow-sm border border-l-4 border-l-pln-blue border-gray-100 overflow-hidden">
-                            <div className="p-4 border-b border-gray-100 bg-blue-50/30 font-bold text-pln-blue flex items-center gap-2">
-                                <ShieldCheck size={18} />
-                                Data Legalitas
-                            </div>
-                            <div className="p-4 space-y-4">
-                                <div>
-                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Jenis Dokumen</label>
-                                    <p className="font-semibold text-gray-800">{asset.jenisDokumen || "-"}</p>
+                    {
+                        !isOperator ? (
+                            <div className="bg-white rounded-2xl shadow-sm border border-l-4 border-l-pln-blue border-gray-100 overflow-hidden">
+                                <div className="p-4 border-b border-gray-100 bg-blue-50/30 font-bold text-pln-blue flex items-center gap-2">
+                                    <ShieldCheck size={18} />
+                                    Data Legalitas
                                 </div>
-                                <div>
-                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Nomor Sertifikat</label>
-                                    <p className="font-semibold text-gray-800">{asset.nomorSertifikat || "Belum ada nomor"}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 space-y-4">
                                     <div>
-                                        <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tgl Terbit</label>
-                                        <p className="text-sm font-semibold text-gray-600">
-                                            {asset.tanggalAwalSertifikat ? new Date(asset.tanggalAwalSertifikat).toLocaleDateString("id-ID", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
-                                        </p>
+                                        <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Jenis Dokumen</label>
+                                        <p className="font-semibold text-gray-800">{asset.jenisDokumen || "-"}</p>
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tgl Berakhir</label>
-                                        <p className="text-sm font-semibold text-gray-600">
-                                            {asset.tanggalAkhirSertifikat ? new Date(asset.tanggalAkhirSertifikat).toLocaleDateString("id-ID", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
-                                        </p>
+                                        <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Nomor Sertifikat</label>
+                                        <p className="font-semibold text-gray-800">{asset.nomorSertifikat || "Belum ada nomor"}</p>
                                     </div>
-                                </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tgl Terbit</label>
+                                            <p className="text-sm font-semibold text-gray-600">
+                                                {asset.tanggalAwalSertifikat ? new Date(asset.tanggalAwalSertifikat).toLocaleDateString("id-ID", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tgl Berakhir</label>
+                                            <p className="text-sm font-semibold text-gray-600">
+                                                {asset.tanggalAkhirSertifikat ? new Date(asset.tanggalAkhirSertifikat).toLocaleDateString("id-ID", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                {asset.linkSertifikat && (
-                                    <a
-                                        href={asset.linkSertifikat}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-pln-blue text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm mt-2"
-                                    >
-                                        <Download size={18} />
-                                        Unduh Softfile
-                                    </a>
-                                )}
+                                    {asset.linkSertifikat && (
+                                        <a
+                                            href={asset.linkSertifikat}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-center gap-2 w-full py-2.5 bg-pln-blue text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm mt-2"
+                                        >
+                                            <Download size={18} />
+                                            Unduh Softfile
+                                        </a>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-100 border-dashed">
-                            <ShieldCheck size={32} className="mx-auto text-gray-300 mb-2" />
-                            <p className="text-sm font-bold text-gray-400">Data Legalitas Terbatas</p>
-                            <p className="text-xs text-gray-400 mt-1">Anda tidak memiliki akses untuk melihat dokumen legalitas aset ini.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
+                        ) : (
+                            <div className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-100 border-dashed">
+                                <ShieldCheck size={32} className="mx-auto text-gray-300 mb-2" />
+                                <p className="text-sm font-bold text-gray-400">Data Legalitas Terbatas</p>
+                                <p className="text-xs text-gray-400 mt-1">Anda tidak memiliki akses untuk melihat dokumen legalitas aset ini.</p>
+                            </div>
+                        )
+                    }
+                </div >
+            </div >
+        </div >
     );
 }

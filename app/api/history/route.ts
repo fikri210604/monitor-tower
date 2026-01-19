@@ -23,8 +23,28 @@ export async function GET(req: NextRequest) {
         const page = parseInt(searchParams.get("page") || "1");
         const skip = (page - 1) * limit;
 
+        const startDate = searchParams.get("startDate");
+        const endDate = searchParams.get("endDate");
+
+        // Build where clause
+        const where: any = {};
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) {
+                where.createdAt.gte = new Date(startDate);
+            }
+            if (endDate) {
+                // Set endDate to end of day if it's just a date string, or handle strictly
+                // Assuming client sends YYYY-MM-DD
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                where.createdAt.lte = end;
+            }
+        }
+
         const [logs, total] = await Promise.all([
             prisma.activityLog.findMany({
+                where,
                 take: limit,
                 skip: skip,
                 orderBy: { createdAt: "desc" },
@@ -34,7 +54,7 @@ export async function GET(req: NextRequest) {
                     }
                 }
             }),
-            prisma.activityLog.count()
+            prisma.activityLog.count({ where })
         ]);
 
         return NextResponse.json({

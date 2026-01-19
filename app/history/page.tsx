@@ -12,6 +12,8 @@ export default function HistoryPage() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     // Auth Check
     useEffect(() => {
@@ -24,10 +26,17 @@ export default function HistoryPage() {
         }
     }, [status, session, router]);
 
-    const fetchLogs = async (p = 1) => {
+    const fetchLogs = async (p = 1, start = startDate, end = endDate) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/history?page=${p}&limit=20`);
+            const params = new URLSearchParams({
+                page: p.toString(),
+                limit: "20",
+            });
+            if (start) params.append("startDate", start);
+            if (end) params.append("endDate", end);
+
+            const res = await fetch(`/api/history?${params.toString()}`);
             const data = await res.json();
             if (res.ok) {
                 setLogs(data.data);
@@ -43,7 +52,20 @@ export default function HistoryPage() {
 
     useEffect(() => {
         if (status === "authenticated") fetchLogs();
-    }, [status]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [status]); // Keep dependency minimal to avoid loops, explicit filter button triggers fetch
+
+    const handleFilter = () => {
+        setPage(1);
+        fetchLogs(1, startDate, endDate);
+    };
+
+    const handleReset = () => {
+        setStartDate("");
+        setEndDate("");
+        setPage(1);
+        fetchLogs(1, "", "");
+    };
 
     const getIcon = (action: string) => {
         switch (action) {
@@ -110,7 +132,7 @@ export default function HistoryPage() {
     return (
         <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto font-sans">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                         <History className="text-pln-blue" />
@@ -119,6 +141,45 @@ export default function HistoryPage() {
                     <p className="text-sm text-gray-500 mt-1">
                         Memantau semua aktivitas penambahan, perubahan, dan penghapusan data.
                     </p>
+                </div>
+
+                {/* Date Filter */}
+                <div className="flex flex-wrap items-end gap-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Mulai Tanggal</label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-pln-blue focus:border-pln-blue block w-36 px-2.5 py-1.5 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Sampai Tanggal</label>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-pln-blue focus:border-pln-blue block w-36 px-2.5 py-1.5 outline-none"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleFilter}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-pln-blue hover:bg-sky-600 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                            <Search size={16} />
+                            Filter
+                        </button>
+                        {(startDate || endDate) && (
+                            <button
+                                onClick={handleReset}
+                                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-lg transition-colors border border-gray-300"
+                            >
+                                Reset
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
