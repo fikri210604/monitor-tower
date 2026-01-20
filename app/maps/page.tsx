@@ -325,7 +325,7 @@ export default function MapsPage() {
             </div>
 
             {/* --- LEGEND (KETERANGAN) --- */}
-            <div className="absolute top-4 right-4 z-[400] flex flex-col items-end gap-2 pointer-events-none">
+            <div className="absolute top-20 right-4 md:top-4 md:right-4 z-[400] flex flex-col items-end gap-2 pointer-events-none">
                 {/* Toggle Button (Visible on Mobile/Tablet to save space, or just always show toggle) */}
                 <button
                     onClick={() => setShowLegend(!showLegend)}

@@ -22,6 +22,8 @@ export interface Asset {
     jenisDokumen: string | null;
     nomorSertifikat: string | null;
     linkSertifikat: string | null;
+    tanggalAwalSertifikat?: Date | string | null;
+    tanggalAkhirSertifikat?: Date | string | null;
 
     // Fisik
     penguasaanTanah: string | null;

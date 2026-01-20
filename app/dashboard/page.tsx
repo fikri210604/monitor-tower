@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Shield, TrendingUp, AlertTriangle, FileText, MapPin, Clock } from "lucide-react";
+import ExpiryWidget from "../components/Dashboard/ExpiryWidget";
+import DashboardCharts from "../components/Dashboard/DashboardCharts";
 
 export default async function Dashboard() {
     const session = await getServerSession(authOptions);
@@ -13,12 +15,18 @@ export default async function Dashboard() {
         redirect("/maps");
     }
 
+    // Calculate Date 30 days from now
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+
     // 1. Fetch Basic Stats (Parallel)
     const [
         totalAset,
         sertifikasiSelesai,
         asetAman,
-        recentAssets
+        recentAssets,
+        expiringAssets
     ] = await Promise.all([
         prisma.asetTower.count(),
         prisma.asetTower.count({ where: { nomorSertifikat: { not: null } } }),
@@ -41,6 +49,23 @@ export default async function Dashboard() {
                 createdAt: true,
                 permasalahanAset: true
             }
+        }),
+        // Fetch Expiring Certificates (End Date <= 30 Days from now AND End Date >= Today)
+        prisma.asetTower.findMany({
+            where: {
+                tanggalAkhirSertifikat: {
+                    lte: thirtyDaysFromNow,
+                    gte: today // Optional: Don't show already expired? Or maybe show them too? Let's show all upcoming + expired for now.
+                }
+            },
+            take: 10,
+            orderBy: { tanggalAkhirSertifikat: 'asc' },
+            select: {
+                id: true,
+                kodeSap: true,
+                deskripsi: true,
+                tanggalAkhirSertifikat: true
+            }
         })
     ]);
 
@@ -60,6 +85,9 @@ export default async function Dashboard() {
                     <span className="text-sm font-medium text-gray-600">{userRole} Access</span>
                 </div>
             </div>
+
+            {/* Expiry Notification Widget */}
+            <ExpiryWidget expiringAssets={expiringAssets} />
 
             {/* Main Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -98,84 +126,19 @@ export default async function Dashboard() {
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 1. Pie Chart: Status Sertifikasi (REPLACEMENT) */}
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center">
-                            <h3 className="font-semibold text-gray-700 mb-6 w-full text-center">Status Sertifikasi Aset</h3>
-
-                            <div className="relative w-48 h-48 rounded-full shadow-inner flex items-center justify-center transition-all hover:scale-105 duration-500"
-                                style={{
-                                    background: `conic-gradient(
-                                        #10b981 0% ${(sertifikasiSelesai / totalAset) * 100}%, 
-                                        #f59e0b ${(sertifikasiSelesai / totalAset) * 100}% 100%
-                                    )`
-                                }}
-                            >
-                                {/* Inner Circle */}
-                                <div className="w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
-                                    <span className="text-3xl font-bold text-gray-800">{sertifikasiPercentage}%</span>
-                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">Bersertifikat</span>
-                                </div>
-                            </div>
-
-                            {/* Legend */}
-                            <div className="flex gap-6 mt-8">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></span>
-                                    <div className="text-xs text-gray-600">
-                                        <p className="font-bold">{sertifikasiSelesai}</p>
-                                        <p>Sudah</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-200"></span>
-                                    <div className="text-xs text-gray-600">
-                                        <p className="font-bold">{totalAset - sertifikasiSelesai}</p>
-                                        <p>Belum</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 2. Pie Chart: Distribusi Kesehatan Aset (EXISTING, MOVED) */}
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center">
-                            <h3 className="font-semibold text-gray-700 mb-6 w-full text-center">Kesehatan Aset</h3>
-
-                            <div className="relative w-48 h-48 rounded-full shadow-inner flex items-center justify-center transition-all hover:scale-105 duration-500"
-                                style={{
-                                    background: `conic-gradient(
-                                            #3b82f6 0% ${(asetAman / totalAset) * 100}%, 
-                                            #ef4444 ${(asetAman / totalAset) * 100}% 100%
-                                        )`
-                                }}
-                            >
-                                {/* Inner Circle */}
-                                <div className="w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
-                                    <span className="text-3xl font-bold text-gray-800">{Math.round((asetAman / totalAset) * 100)}%</span>
-                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">Aset Aman</span>
-                                </div>
-                            </div>
-
-                            {/* Legend */}
-                            <div className="flex gap-6 mt-8">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></span>
-                                    <div className="text-xs text-gray-600">
-                                        <p className="font-bold">{asetAman}</p>
-                                        <p>Aman</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-200"></span>
-                                    <div className="text-xs text-gray-600">
-                                        <p className="font-bold">{masalahAktif}</p>
-                                        <p>Masalah</p>
-                                    </div>
-                                </div>
-                            </div>
+                        {/* Interactive Charts */}
+                        <div className="md:col-span-2">
+                            <DashboardCharts
+                                total={totalAset}
+                                certified={sertifikasiSelesai}
+                                safe={asetAman}
+                            />
                         </div>
 
                         {/* 3. Recent Activity Table (Full Width) */}
+                        {/* Note: I moved this out of grid-cols-2 to be full width below if desired, but let's keep it in flow */}
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm md:col-span-2">
+
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-semibold text-gray-700 font-medium flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-gray-400" />

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { History, Search, FileSpreadsheet, Plus, Edit, Trash2, ShieldAlert } from "lucide-react";
+import HistoryMobileCard from "../components/History/HistoryMobileCard";
 
 export default function HistoryPage() {
     const { data: session, status } = useSession();
@@ -183,8 +184,8 @@ export default function HistoryPage() {
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm text-gray-600">
                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -233,8 +234,25 @@ export default function HistoryPage() {
                     </table>
                 </div>
 
-                {/* Pagination */}
-                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                {/* Desktop Pagination (Moved inside the desktop block or keep outside? Better keep outside to share) */}
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="space-y-3 md:hidden">
+                {logs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100">
+                        Belum ada aktivitas.
+                    </div>
+                ) : (
+                    logs.map((log) => (
+                        <HistoryMobileCard key={log.id} log={log} />
+                    ))
+                )}
+            </div>
+
+            {/* Shared Pagination (Keep it outside both blocks so it shows for both) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-4"> {/* Added container for pagination style consistency */}
+                <div className="bg-gray-50 px-6 py-3 flex items-center justify-between">
                     <p className="text-xs text-gray-500">Halaman {page} dari {totalPages}</p>
                     <div className="flex gap-2">
                         <button
