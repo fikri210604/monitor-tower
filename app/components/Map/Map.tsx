@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, Marker, LayersControl, useMap, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, LayersControl, useMap, Popup, useMapEvents, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -312,7 +312,16 @@ export default function Map({
 
     return (
         <>
-            <MapContainer id={mapId} key={mapId} center={center} zoom={zoom} scrollWheelZoom={true} className="h-full w-full rounded-xl z-0 outline-none">
+            <MapContainer
+                id={mapId}
+                key={mapId}
+                center={center}
+                zoom={zoom}
+                scrollWheelZoom={true}
+                className="h-full w-full rounded-xl z-0 outline-none"
+                zoomControl={false} // Disable default top-left
+            >
+                <ZoomControl position="bottomright" /> {/* Move to bottom-right */}
                 <MapController center={focusedLocation} />
 
                 {/* Tile Layer Switching */}

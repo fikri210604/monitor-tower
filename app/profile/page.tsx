@@ -1,15 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { User, Shield, Calendar, Mail } from "lucide-react";
+import { User, Shield, Calendar, Mail, Lock } from "lucide-react";
+import ChangePasswordModal from "@/app/components/User/ChangePasswordModal";
 
 export default function ProfilePage() {
     const { data: session } = useSession();
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     if (!session) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <p className="text-gray-500">Memuat data profil...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pln-blue"></div>
             </div>
         )
     }
@@ -30,6 +33,16 @@ export default function ProfilePage() {
                             <Shield className="w-4 h-4" />
                             {session.user?.role}
                         </p>
+                    </div>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setIsPasswordModalOpen(true)}
+                            className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-gray-50 hover:text-pln-blue transition-colors shadow-sm"
+                        >
+                            <Lock className="w-4 h-4" />
+                            Ganti Password
+                        </button>
                     </div>
                 </div>
 
@@ -68,11 +81,10 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {/* <div className="mt-8 flex justify-end">
-                    <button className="px-4 py-2 bg-pln-blue text-white rounded-lg hover:bg-sky-600 transition-colors text-sm font-medium shadow-sm">
-                        Edit Profil
-                    </button>
-                </div> */}
+                <ChangePasswordModal
+                    isOpen={isPasswordModalOpen}
+                    onClose={() => setIsPasswordModalOpen(false)}
+                />
             </div>
         </div>
     );

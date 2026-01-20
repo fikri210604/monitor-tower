@@ -1,14 +1,16 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, FileDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AssetTableProps, SortField, SortOrder } from "@/types/asset";
 import { useTableFilters } from "@/hooks/useTableFilters";
 import { useTableSort } from "@/hooks/useTableSort";
 import { usePagination } from "@/hooks/usePagination";
 import AssetTableRow from "./AssetTableRow";
+import AssetMobileCard from "./AssetMobileCard";
 import { DEFAULT_ITEMS_PER_PAGE, ITEMS_PER_PAGE_OPTIONS, SEARCH_PLACEHOLDER, ALL_STATUS_FILTER_LABEL } from "@/constants/table";
 import PhotoLightbox from "../Shared/PhotoLightbox";
+import { useSearchParams } from "next/navigation";
 
 /* =========================
    Main Component
@@ -26,6 +28,8 @@ export default function AssetTable({
         setSearchQuery,
         statusFilter,
         setStatusFilter,
+        expiringFilter,
+        setExpiringFilter,
         uniqueStatuses,
         filteredAssets,
         hasActiveFilters,
@@ -53,10 +57,21 @@ export default function AssetTable({
         resetToFirstPage,
     } = usePagination(sortedAssets, DEFAULT_ITEMS_PER_PAGE);
 
+    // URL Search Params for Smart Links
+    const searchParams = useSearchParams();
+
+    // Effect: Handle URL Filters
+    useEffect(() => {
+        const filterParam = searchParams.get('filter');
+        if (filterParam === 'expiring') {
+            setExpiringFilter(true);
+        }
+    }, [searchParams, setExpiringFilter]);
+
     // Reset to page 1 when filters or sorting changes
     useEffect(() => {
         resetToFirstPage();
-    }, [searchQuery, statusFilter, sortField, sortOrder]);
+    }, [searchQuery, statusFilter, sortField, sortOrder, expiringFilter]);
 
     // Handlers with pagination reset
     const handleSearchChange = (value: string) => {
@@ -76,22 +91,30 @@ export default function AssetTable({
         setPhotoIndex(0);
     };
 
-    // The following handlers are no longer needed as PhotoLightbox manages its own navigation
-    // const handleNextPhoto = (e: React.MouseEvent) => {
-    //     e.stopPropagation();
-    //     if (!viewingPhotos) return;
-    //     setPhotoIndex((prev) => (prev + 1) % viewingPhotos.length);
-    // };
-
-    // const handlePrevPhoto = (e: React.MouseEvent) => {
-    //     e.stopPropagation();
-    //     if (!viewingPhotos) return;
-    //     setPhotoIndex((prev) => (prev === 0 ? viewingPhotos.length - 1 : prev - 1));
-    // };
+    // Export Handler
+    const handleExport = () => {
+        window.open("/api/assets/export", "_blank");
+    };
 
     return (
         <div className="space-y-4">
             {/* ... (Search and Filter Bar code remains same) ... */}
+            {/* Active Date Filter Banner */}
+            {expiringFilter && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                        <Filter size={16} />
+                        Menampilkan aset yang akan kedaluwarsa dalam 30 hari.
+                    </div>
+                    <button
+                        onClick={() => setExpiringFilter(false)}
+                        className="text-xs font-bold underline hover:text-amber-900"
+                    >
+                        Hapus Filter
+                    </button>
+                </div>
+            )}
+
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                 <div className="flex flex-col sm:flex-row gap-3">
                     {/* Search */}
@@ -120,6 +143,18 @@ export default function AssetTable({
                             ))}
                         </select>
                     </div>
+
+                    {/* Export Button (Only for Admin/Master) */}
+                    {(userRole === "ADMIN" || userRole === "MASTER") && (
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors font-medium whitespace-nowrap"
+                            title="Export ke Excel"
+                        >
+                            <FileDown size={18} />
+                            <span className="hidden sm:inline">Export Excel</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Active filters indicator */}
@@ -146,8 +181,8 @@ export default function AssetTable({
                 )}
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm bg-white">
+            {/* Desktop Table: Hidden on Mobile */}
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100 shadow-sm bg-white">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-500 font-medium whitespace-nowrap">
                         <tr>
@@ -192,6 +227,27 @@ export default function AssetTable({
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Card View: Hidden on Desktop */}
+            <div className="space-y-3 md:hidden">
+                {paginatedItems.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100">
+                        {hasActiveFilters ? "Tidak ada data (Mobile)." : "Belum ada data."}
+                    </div>
+                ) : (
+                    paginatedItems.map((asset) => (
+                        <AssetMobileCard
+                            key={asset.id}
+                            asset={asset}
+                            onDelete={onDelete}
+                            onEdit={onEdit}
+                            onLocate={onLocate}
+                            onViewPhotos={handleViewPhotos}
+                            userRole={userRole}
+                        />
+                    ))
+                )}
             </div>
 
             {/* Pagination Controls */}
