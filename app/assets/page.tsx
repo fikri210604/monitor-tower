@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import ExcelImport from "@/app/components/Asset/ExcelImport";
@@ -216,13 +216,15 @@ export default function AssetsPage() {
             {/* Full Table Section */}
             <div>
                 <h3 className="font-bold text-gray-800 mb-4 text-lg">Daftar Aset Lengkap</h3>
-                <AssetTable
-                    assets={assets}
-                    onDelete={handleDelete}
-                    onEdit={handleEdit}
-                    onLocate={handleLocate}
-                    userRole={(session?.user as any)?.role}
-                />
+                <Suspense fallback={<div className="p-8 text-center text-gray-500">Memuat data tabel...</div>}>
+                    <AssetTable
+                        assets={assets}
+                        onDelete={handleDelete}
+                        onEdit={handleEdit}
+                        onLocate={handleLocate}
+                        userRole={(session?.user as any)?.role}
+                    />
+                </Suspense>
             </div>
 
             {/* Modal */}
