@@ -158,7 +158,7 @@ export default async function Dashboard() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {recentAssets.map(asset => (
+                                        {recentAssets.map((asset: any) => (
                                             <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-4 py-3 font-medium text-gray-800">
                                                     {asset.deskripsi || "Tanpa Nama"}

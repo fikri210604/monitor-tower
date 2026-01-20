@@ -41,7 +41,7 @@ export async function GET(
         let maskedLinkSertifikat = asset.linkSertifikat;
 
         if (role === 'OPERATOR') {
-            visiblePhotos = asset.fotoAset.filter(f => f.kategori !== 'ASET' && f.kategori !== null);
+            visiblePhotos = asset.fotoAset.filter((f: any) => f.kategori !== 'ASET' && f.kategori !== null);
             maskedNomorSertifikat = null;
             maskedLinkSertifikat = null;
         }

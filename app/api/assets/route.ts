@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     // Check role and filter photos
     const role = (session.user as any).role;
 
-    const processedAssets = assets.map(asset => {
+    const processedAssets = assets.map((asset: any) => {
       // If OPERATOR, filter out 'ASET' photos
       // We keep 'DOKUMENTASI' and others (like null/undefined if we want to be permissive, 
       // but based on plan we ONLY show DOKUMENTASI if we want strictness. 
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       let maskedLinkSertifikat = asset.linkSertifikat;
 
       if (role === 'OPERATOR') {
-        visiblePhotos = asset.fotoAset.filter(f => f.kategori !== 'ASET' && f.kategori !== null);
+        visiblePhotos = asset.fotoAset.filter((f: any) => f.kategori !== 'ASET' && f.kategori !== null);
         maskedNomorSertifikat = null; // Mask sensitive data
         maskedLinkSertifikat = null; // Mask sensitive data
       }

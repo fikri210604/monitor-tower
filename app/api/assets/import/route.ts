@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // Improved Map: Store ARRAY of IDs for each kodeSap to handle duplicates
     // Map<kodeSap, string[]>
     const existingMap = new Map<number, string[]>();
-    existingAssets.forEach(a => {
+    existingAssets.forEach((a: any) => {
       if (!existingMap.has(a.kodeSap)) {
         existingMap.set(a.kodeSap, []);
       }
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
           prisma.asetTower.update({
             where: { id: item.id },
             data: item.data
-          }).catch(e => {
+          }).catch((e: any) => {
             console.error(`Update failed for ${item.data.kodeSap}:`, e);
             errorCount++;
             errors.push({ row: 0, kodeSap: item.data.kodeSap, reason: "Update Failed" });

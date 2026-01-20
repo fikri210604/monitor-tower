@@ -9,7 +9,7 @@ export async function GET() {
         });
 
         // Format data for simpler Excel columns
-        const data = assets.map(asset => ({
+        const data = assets.map((asset: any) => ({
             "Kode SAP": asset.kodeSap,
             "Kode Unit": asset.kodeUnit,
             "Deskripsi": asset.deskripsi,

@@ -34,7 +34,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
 
     // Filter photos for Operator
     const filteredPhotos = isOperator
-        ? asset.fotoAset.filter(f => f.kategori !== "ASET" && f.kategori !== null)
+        ? asset.fotoAset.filter((f: any) => f.kategori !== "ASET" && f.kategori !== null)
         : asset.fotoAset;
 
     return (
