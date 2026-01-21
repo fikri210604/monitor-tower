@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,19 +17,29 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = Date.now() + "_" + file.name.replaceAll(" ", "_");
-        const uploadDir = path.join(process.cwd(), "public/uploads");
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-        try {
-            await mkdir(uploadDir, { recursive: true });
-        } catch (e) {
-            // Ignore if exists
-        }
+        // Upload to Cloudinary using upload_stream
+        const uploadResult = await new Promise<any>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: "sertifikasi-tower-uploads", // Optional: organize uploads in a folder
+                    resource_type: "auto", // Auto-detect image/video/raw
+                },
+                (error, result) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(result);
+                    }
+                }
+            );
+            uploadStream.end(buffer);
+        });
 
-        await writeFile(path.join(uploadDir, filename), buffer);
+        return NextResponse.json({ url: uploadResult.secure_url });
 
-        return NextResponse.json({ url: `/uploads/${filename}` });
     } catch (error) {
         console.error("Upload error:", error);
         return NextResponse.json({ error: "Upload failed" }, { status: 500 });
