@@ -26,7 +26,7 @@ const fixLeafletIcon = () => {
 function MapController({ center }: { center: [number, number] | null }) {
     const map = useMap();
     useEffect(() => {
-        if (center) map.panTo(center, { animate: true, duration: 0.8 });
+        if (center) map.flyTo(center, 18, { animate: true, duration: 1.5 });
     }, [center, map]);
     return null;
 }
