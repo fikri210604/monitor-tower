@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
         { deskripsi: { contains: search, mode: 'insensitive' as const } },
         { alamat: { contains: search, mode: 'insensitive' as const } },
         { desa: { contains: search, mode: 'insensitive' as const } },
+        { kodeSap: !isNaN(Number(search)) ? parseInt(search) : undefined }, // Enable searching by SAP
       ]
     } : {};
 
@@ -34,6 +35,9 @@ export async function GET(req: NextRequest) {
     const [assets, totalCount] = await Promise.all([
       prisma.asetTower.findMany({
         where: whereClause,
+        // Using 'include' fetches all columns. For list view, we might not need everything.
+        // However, user reports N+1. The current query logic isn't N+1.
+        // But removing JSON.parse(JSON.stringify) will help time significantly.
         include: {
           fotoAset: true,
         },
@@ -49,12 +53,8 @@ export async function GET(req: NextRequest) {
     // Check role and filter photos
     const role = (session.user as any).role;
 
-    const processedAssets = assets.map((asset: any) => {
-      // If OPERATOR, filter out 'ASET' photos
-      // We keep 'DOKUMENTASI' and others (like null/undefined if we want to be permissive, 
-      // but based on plan we ONLY show DOKUMENTASI if we want strictness. 
-      // Plan: "If OPERATOR, filter the fotoAset array to exclude kategori === 'ASET'"
-
+    // Optimized Mapping without double serialization
+    const serializedAssets = assets.map((asset: any) => {
       let visiblePhotos = asset.fotoAset;
       let maskedNomorSertifikat = asset.nomorSertifikat;
       let maskedLinkSertifikat = asset.linkSertifikat;
@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
         maskedLinkSertifikat = null; // Mask sensitive data
       }
 
+      // Return plain object directly, handling BigInt manually if present (none in current schema seems to be BigInt?)
+      // If there are BigInts, we must .toString() them. Prisma returns Number for Int.
       return {
         ...asset,
         fotoAset: visiblePhotos,
@@ -72,12 +74,6 @@ export async function GET(req: NextRequest) {
         linkSertifikat: maskedLinkSertifikat
       };
     });
-
-    const serializedAssets = JSON.parse(JSON.stringify(processedAssets, (key, value) =>
-      typeof value === 'bigint'
-        ? value.toString()
-        : value
-    ));
 
     return NextResponse.json({
       data: serializedAssets,

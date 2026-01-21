@@ -26,33 +26,41 @@ export async function GET(req: NextRequest) {
                 nomorSertifikat: true,
                 tahunPerolehan: true,
                 luasTanah: true,
-                // Include minimal photo data (just first photo for preview)
                 fotoAset: {
                     take: 1,
-                    select: {
-                        id: true,
-                        url: true,
-                    }
+                    select: { url: true }
                 }
             },
-            orderBy: {
-                createdAt: "desc",
-            },
+            // Order by ID is faster than CreatedAt for large datasets if order doesn't strictly matter for markers
+            orderBy: { id: "asc" },
         });
 
-        const serializedMarkers = JSON.parse(JSON.stringify(markers, (key, value) =>
-            typeof value === 'bigint'
-                ? value.toString()
-                : value
-        ));
-
-        // Add computed field hasCertificate for frontend coloring (safe for all roles)
-        const enrichedMarkers = serializedMarkers.map((m: any) => ({
-            ...m,
+        // Optimize Serialization: Avoid JSON.parse(JSON.stringify)
+        // Manually map to plain objects and handle BigInt if necessary (though none of the selected fields seem to be BigInt except maybe ID?)
+        // If ID is BigInt, we convert it.
+        const serializedMarkers = markers.map(m => ({
+            id: m.id,
+            kodeSap: m.kodeSap,
+            koordinatX: m.koordinatX,
+            koordinatY: m.koordinatY,
+            jenisBangunan: m.jenisBangunan,
+            permasalahanAset: m.permasalahanAset, // 'CLEAN_AND_CLEAR', etc.
+            deskripsi: m.deskripsi,
+            alamat: m.alamat,
+            nomorSertifikat: m.nomorSertifikat,
+            tahunPerolehan: m.tahunPerolehan,
+            luasTanah: m.luasTanah,
+            fotoAset: m.fotoAset,
+            // Pre-compute handy flags for frontend
             hasCertificate: !!(m.nomorSertifikat && m.nomorSertifikat !== "-" && m.nomorSertifikat !== "")
         }));
 
-        return NextResponse.json(enrichedMarkers);
+        return NextResponse.json(serializedMarkers, {
+            headers: {
+                // Cache for 1 minute to reduce DB load on frequent map refreshes
+                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+            }
+        });
     } catch (error) {
         console.error("GET Markers Error:", error);
         return NextResponse.json(

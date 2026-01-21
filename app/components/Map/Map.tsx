@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, Marker, LayersControl, useMap, Popup, useMapEvents, ZoomControl } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap, Popup, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import L from "leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 
 import Link from "next/link";
 import { TowerControl, CheckCircle2, AlertCircle, MapPin, ExternalLink, Copy, Ruler, Calendar, Zap, ArrowRight } from "lucide-react";
@@ -54,13 +57,18 @@ export default function Map({
     const hasCertificate = (m: any) => m.hasCertificate ?? (m.nomorSertifikat && m.nomorSertifikat !== "-" && m.nomorSertifikat !== "");
     const handleCopy = (txt: string) => { navigator.clipboard.writeText(txt); alert("Disalin!"); };
 
-    // Define Icons
-    const getIcon = (status: string | null, type: string | null) => {
-        const isProblem = status && !status.toLowerCase().includes("clean");
-        const color = isProblem ? "#ef4444" : "#2563eb"; // Red vs Blue
-        const bgColor = isProblem ? "#fef2f2" : "#eff6ff"; // Light Red vs Light Blue
+    // Define Icons Factory
+    const getIcon = (status: boolean, type: string | null) => {
+        const isProblem = !status; // status passed here is 'isSafe' basically, wait. Logic below:
+        // Let's pass 'isProblem' directly or 'color'.
+        // Simplified:
+        // Blue = Safe (Ada Sertifikat usually means safe in validMarkers logic?)
+        // Actually earlier logic: Blue = Safe Config, Red = Problem.
+        // Let's stick to: Blue Icon = OK, Red Icon = Problem.
 
-        // Pilih Icon berdasarkan Jenis Bangunan
+        const color = isProblem ? "#ef4444" : "#2563eb";
+        const bgColor = isProblem ? "#fef2f2" : "#eff6ff";
+
         const IconComponent = (type === "GARDU_INDUK") ? Zap : TowerControl;
 
         return L.divIcon({
@@ -92,25 +100,33 @@ export default function Map({
         });
     };
 
-    // Pre-create icons to avoid recreation on every render (Performance optimization)
-    const towerSafe = getIcon("CLEAN", "TAPAK_TOWER");
-    const towerProblem = getIcon("SENGKETA", "TAPAK_TOWER");
-    const garduSafe = getIcon("CLEAN", "GARDU_INDUK");
-    const garduProblem = getIcon("SENGKETA", "GARDU_INDUK");
+    // Memoize icons
+    const towerSafe = useMemo(() => getIcon(false, "TAPAK_TOWER"), []);
+    const towerProblem = useMemo(() => getIcon(true, "TAPAK_TOWER"), []);
+    const garduSafe = useMemo(() => getIcon(false, "GARDU_INDUK"), []);
+    const garduProblem = useMemo(() => getIcon(true, "GARDU_INDUK"), []);
 
-    const validMarkers = markers.filter(m =>
+    const validMarkers = useMemo(() => markers.filter(m =>
         m.koordinatY !== null && m.koordinatY !== undefined &&
         m.koordinatX !== null && m.koordinatX !== undefined &&
         !isNaN(Number(m.koordinatY)) && !isNaN(Number(m.koordinatX))
-    );
+    ), [markers]);
 
-    // --- SUB-COMPONENT FOR MARKER LOGIC ---
-    function MarkerWithLogic({ marker, icon, isSelected, onClick }: any) {
+    // --- LOGIC FOR INDIVIDUAL MARKER ---
+    function MarkerItem({ marker, isSelected }: any) {
         const markerRef = useRef<any>(null);
+
+        // Icon logic
+        const hasCert = hasCertificate(marker);
+        const isGardu = marker.jenisBangunan === "GARDU_INDUK";
+        // Logic: If Certificate Exists -> Blue/Safe. If No Cert -> Red/Problem.
+        // Wait, earlier logic was: isProblem = !clean.
+        // Let's stick to the visibleMarkers logic in previous code:
+        // iconToUse = hasCert ? (isGardu ? garduSafe : towerSafe) : (isGardu ? garduProblem : towerProblem);
+        const iconToUse = hasCert ? (isGardu ? garduSafe : towerSafe) : (isGardu ? garduProblem : towerProblem);
 
         useEffect(() => {
             if (isSelected && markerRef.current) {
-                // Hanya buka sembulan otomatis di Desktop
                 if (window.innerWidth >= 768) {
                     markerRef.current.openPopup();
                 }
@@ -120,19 +136,17 @@ export default function Map({
         return (
             <Marker
                 ref={markerRef}
-                key={marker.id}
                 position={[marker.koordinatY, marker.koordinatX]}
-                icon={icon}
+                icon={iconToUse}
                 eventHandlers={{
                     click: (e) => {
                         if (window.innerWidth < 768) {
                             e.target.closePopup();
-                            if (onClick) onClick({ ...marker, latitude: marker.koordinatY, longitude: marker.koordinatX });
+                            if (onMarkerClick) onMarkerClick({ ...marker, latitude: marker.koordinatY, longitude: marker.koordinatX });
                         }
                     },
                 }}
             >
-                {/* POPUP DETAILED */}
                 <Popup minWidth={300} maxWidth={320} className="custom-popup-detailed" autoPanPadding={[10, 80]}>
                     <div className="font-sans text-gray-800 p-1">
                         {/* Header: SAP & Certificate Status */}
@@ -182,9 +196,8 @@ export default function Map({
                             </div>
                         </div>
 
-                        {/* Action Buttons: Sertifikat & Foto */}
+                        {/* Action Buttons */}
                         <div className="flex flex-col gap-2 mb-3">
-                            {/* Button Detail Aset (NEW) */}
                             <Link
                                 href={`/assets/${marker.id}`}
                                 className="flex items-center justify-center gap-2 w-full py-2 bg-pln-blue text-white hover:bg-blue-700 rounded-md transition-colors shadow-sm group"
@@ -193,7 +206,6 @@ export default function Map({
                                 <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                             </Link>
 
-                            {/* Button File Sertifikat */}
                             {hasCertificate(marker) && marker.linkSertifikat && (
                                 <a
                                     href={marker.linkSertifikat}
@@ -206,16 +218,14 @@ export default function Map({
                                 </a>
                             )}
 
-                            {/* Preview/Info Foto (Placeholder logic if photo exists) */}
                             {marker.fotoAset && marker.fotoAset.length > 0 && (
                                 <button
                                     onClick={() => {
-                                        if (onClick) onClick({ ...marker, action: 'viewPhotos' }); // Pass action to parent
+                                        setLightboxPhotos(marker.fotoAset);
                                     }}
                                     className="flex items-center justify-center gap-2 w-full py-1.5 bg-gray-50 text-gray-700 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
                                 >
                                     <div className="flex items-center gap-2">
-                                        {/* Tiny preview if possible, otherwise icon */}
                                         <div className="w-4 h-4 rounded bg-gray-300 overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(${marker.fotoAset[0].url})` }}></div>
                                         <span className="text-xs font-semibold">Lihat Foto ({marker.fotoAset.length})</span>
                                     </div>
@@ -223,7 +233,7 @@ export default function Map({
                             )}
                         </div>
 
-                        {/* Footer: Koordinat & Google Maps Link */}
+                        {/* Footer */}
                         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                             <div
                                 onClick={() => handleCopy(`${marker.koordinatY}, ${marker.koordinatX}`)}
@@ -249,66 +259,36 @@ export default function Map({
         );
     }
 
-    // --- VIEWPORT FILTERING COMPONENT ---
-    function VisibleMarkers({ markers, onMarkerClick, selectedId }: { markers: any[], onMarkerClick?: (m: any) => void, selectedId: string | number | null }) {
-        const map = useMap();
-        const [bounds, setBounds] = useState(map.getBounds());
-
-        // Update bounds on move/zoom end
-        useMapEvents({
-            moveend: () => setBounds(map.getBounds()),
-            zoomend: () => setBounds(map.getBounds()),
-        });
-
-        // Filter: Hanya ambil marker yang masuk dalam bounds saat ini
-        const visibleMarkers = useMemo(() => {
-            return markers.filter(m =>
-                bounds.contains([m.koordinatY, m.koordinatX])
-            );
-        }, [markers, bounds]);
-
-        return (
-            <>
-                {visibleMarkers.map((marker, idx) => {
-                    // Logic Update: Icon color now depends on Certificate Status
-                    // Blue (Safe) = Ada Sertifikat
-                    // Red (Problem) = Tidak Ada Sertifikat
-                    const hasCert = hasCertificate(marker);
-                    const isGardu = marker.jenisBangunan === "GARDU_INDUK";
-
-                    let iconToUse = towerSafe;
-                    if (isGardu) {
-                        iconToUse = hasCert ? garduSafe : garduProblem;
-                    } else {
-                        iconToUse = hasCert ? towerSafe : towerProblem;
-                    }
-
-                    return (
-                        <MarkerWithLogic
-                            key={marker.id || idx}
-                            marker={marker}
-                            icon={iconToUse}
-                            isSelected={selectedId === marker.id}
-                            onClick={onMarkerClick}
-                        />
-                    );
-                })}
-            </>
-        );
-    }
-
     // Lightbox State
     const [lightboxPhotos, setLightboxPhotos] = useState<any[] | null>(null);
 
-    const handleMarkerClickOverride = (marker: any) => {
-        if (marker.action === 'viewPhotos') {
-            setLightboxPhotos(marker.fotoAset);
-        } else if (onMarkerClick) {
-            onMarkerClick(marker);
-        }
-    };
-
     const mapId = useMemo(() => "map-" + Math.random().toString(36).substr(2, 9), []);
+
+    // Custom createClusterCustomIcon function
+    const createClusterCustomIcon = function (cluster: any) {
+        return L.divIcon({
+            html: `
+                <div style="
+                    background-color: rgba(37, 99, 235, 0.9);
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    border: 2px solid white;
+                    font-weight: bold;
+                    font-size: 12px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                ">
+                    ${cluster.getChildCount()}
+                </div>
+            `,
+            className: 'custom-cluster-icon',
+            iconSize: L.point(32, 32, true),
+        });
+    };
 
     return (
         <>
@@ -319,12 +299,11 @@ export default function Map({
                 zoom={zoom}
                 scrollWheelZoom={true}
                 className="h-full w-full rounded-xl z-0 outline-none"
-                zoomControl={false} // Disable default top-left
+                zoomControl={false}
             >
-                <ZoomControl position="bottomright" /> {/* Move to bottom-right */}
+                <ZoomControl position="bottomright" />
                 <MapController center={focusedLocation} />
 
-                {/* Tile Layer Switching */}
                 {mapStyle === "STREET" ? (
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -333,14 +312,26 @@ export default function Map({
                 ) : (
                     <TileLayer
                         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                        attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                        attribution='Tiles &copy; Esri'
                     />
                 )}
 
-                <VisibleMarkers markers={validMarkers} onMarkerClick={handleMarkerClickOverride} selectedId={selectedMarkerId} />
+                <MarkerClusterGroup
+                    chunkedLoading
+                    iconCreateFunction={createClusterCustomIcon}
+                    maxClusterRadius={60}
+                    spiderfyOnMaxZoom={true}
+                >
+                    {validMarkers.map((marker, idx) => (
+                        <MarkerItem
+                            key={marker.id || idx}
+                            marker={marker}
+                            isSelected={selectedMarkerId === marker.id}
+                        />
+                    ))}
+                </MarkerClusterGroup>
             </MapContainer>
 
-            {/* Global Map Lightbox */}
             {lightboxPhotos && (
                 <PhotoLightbox
                     photos={lightboxPhotos}

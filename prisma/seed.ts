@@ -11,8 +11,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Create Users
-  // Create Users
+
   const masterPassword = await bcrypt.hash("master123", 10);
   const adminPassword = await bcrypt.hash("admin123", 10);
   const operatorPassword = await bcrypt.hash("operator123", 10);
