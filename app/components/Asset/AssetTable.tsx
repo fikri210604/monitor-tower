@@ -30,6 +30,8 @@ export default function AssetTable({
         setStatusFilter,
         expiringFilter,
         setExpiringFilter,
+        certFilter,
+        setCertFilter,
         uniqueStatuses,
         filteredAssets,
         hasActiveFilters,
@@ -130,17 +132,30 @@ export default function AssetTable({
                     </div>
 
                     {/* Status Filter */}
-                    <div className="flex items-center gap-2 min-w-[200px]">
+                    <div className="flex items-center gap-2 min-w-[180px]">
                         <Filter className="w-4 h-4 text-gray-400" />
                         <select
                             value={statusFilter}
                             onChange={(e) => handleStatusFilterChange(e.target.value)}
-                            className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue"
+                            className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue text-sm"
                         >
                             <option value="all">{ALL_STATUS_FILTER_LABEL}</option>
                             {uniqueStatuses.map(status => (
                                 <option key={status} value={status}>{status}</option>
                             ))}
+                        </select>
+                    </div>
+
+                    {/* Certificate Filter */}
+                    <div className="flex items-center gap-2 min-w-[180px]">
+                        <select
+                            value={certFilter}
+                            onChange={(e) => setCertFilter(e.target.value as "all" | "certified" | "uncertified")}
+                            className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue text-sm"
+                        >
+                            <option value="all">Semua Sertifikat</option>
+                            <option value="certified">✅ Sudah Sertifikat</option>
+                            <option value="uncertified">⚠️ Belum Sertifikat</option>
                         </select>
                     </div>
 

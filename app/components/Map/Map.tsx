@@ -101,10 +101,12 @@ export default function Map({
     };
 
     // Memoize icons
-    const towerSafe = useMemo(() => getIcon(false, "TAPAK_TOWER"), []);
-    const towerProblem = useMemo(() => getIcon(true, "TAPAK_TOWER"), []);
-    const garduSafe = useMemo(() => getIcon(false, "GARDU_INDUK"), []);
-    const garduProblem = useMemo(() => getIcon(true, "GARDU_INDUK"), []);
+    // status true = tidak ada problem = biru (sudah sertifikat)
+    // status false = ada problem = merah (belum sertifikat)
+    const towerSafe = useMemo(() => getIcon(true, "TAPAK_TOWER"), []);
+    const towerProblem = useMemo(() => getIcon(false, "TAPAK_TOWER"), []);
+    const garduSafe = useMemo(() => getIcon(true, "GARDU_INDUK"), []);
+    const garduProblem = useMemo(() => getIcon(false, "GARDU_INDUK"), []);
 
     const validMarkers = useMemo(() => markers.filter(m =>
         m.koordinatY !== null && m.koordinatY !== undefined &&

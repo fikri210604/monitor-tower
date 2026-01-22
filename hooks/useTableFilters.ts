@@ -10,6 +10,7 @@ export function useTableFilters(assets: Asset[]) {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>(ALL_STATUS_FILTER_VALUE);
     const [expiringFilter, setExpiringFilter] = useState(false);
+    const [certFilter, setCertFilter] = useState<"all" | "certified" | "uncertified">("all");
 
     // Get unique status values for filter dropdown
     const uniqueStatuses = useMemo(() => {
@@ -64,15 +65,31 @@ export function useTableFilters(assets: Asset[]) {
             result = result.filter(asset => asset.permasalahanAset === statusFilter);
         }
 
-        return result;
-    }, [assets, searchQuery, statusFilter, expiringFilter]);
+        // Apply certificate filter
+        if (certFilter === "certified") {
+            result = result.filter(asset => 
+                asset.nomorSertifikat && 
+                asset.nomorSertifikat !== "-" && 
+                asset.nomorSertifikat !== ""
+            );
+        } else if (certFilter === "uncertified") {
+            result = result.filter(asset => 
+                !asset.nomorSertifikat || 
+                asset.nomorSertifikat === "-" || 
+                asset.nomorSertifikat === ""
+            );
+        }
 
-    const hasActiveFilters = searchQuery.trim() !== "" || statusFilter !== ALL_STATUS_FILTER_VALUE || expiringFilter;
+        return result;
+    }, [assets, searchQuery, statusFilter, expiringFilter, certFilter]);
+
+    const hasActiveFilters = searchQuery.trim() !== "" || statusFilter !== ALL_STATUS_FILTER_VALUE || expiringFilter || certFilter !== "all";
 
     const resetFilters = () => {
         setSearchQuery("");
         setStatusFilter(ALL_STATUS_FILTER_VALUE);
         setExpiringFilter(false);
+        setCertFilter("all");
     };
 
     return {
@@ -82,6 +99,8 @@ export function useTableFilters(assets: Asset[]) {
         setStatusFilter,
         expiringFilter,
         setExpiringFilter,
+        certFilter,
+        setCertFilter,
         uniqueStatuses,
         filteredAssets,
         hasActiveFilters,
