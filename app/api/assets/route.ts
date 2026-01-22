@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("POST Asset Error:", error);
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Kode SAP already exists" }, { status: 409 });
+      return NextResponse.json({ error: "Nomor SAP already exists" }, { status: 409 });
     }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

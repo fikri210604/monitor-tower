@@ -186,7 +186,7 @@ export default function AssetTable({
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-500 font-medium whitespace-nowrap">
                         <tr>
-                            <SortableHeader field="kodeSap" label="Kode SAP" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="kodeSap" label="Nomor SAP" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="deskripsi" label="Deskripsi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="luasTanah" label="Luas (m²)" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="tahunPerolehan" label="Tahun" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
@@ -195,6 +195,8 @@ export default function AssetTable({
                             <SortableHeader field="kecamatan" label="Kecamatan" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="kabupaten" label="Kabupaten/Kota" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="provinsi" label="Provinsi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <th className="px-4 py-3">Koordinat X</th>
+                            <th className="px-4 py-3">Koordinat Y</th>
                             <SortableHeader field="nomorSertifikat" label="Nomor Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="jenisDokumen" label="File Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="permasalahanAset" label="Masalah" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
@@ -206,7 +208,7 @@ export default function AssetTable({
                     <tbody className="divide-y divide-gray-100">
                         {paginatedItems.length === 0 ? (
                             <tr>
-                                <td colSpan={14} className="px-4 py-8 text-center text-gray-400">
+                                <td colSpan={16} className="px-4 py-8 text-center text-gray-400">
                                     {hasActiveFilters
                                         ? "Tidak ada data yang sesuai dengan filter."
                                         : "Belum ada data aset."}

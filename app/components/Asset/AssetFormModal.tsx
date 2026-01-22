@@ -14,7 +14,7 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
     const [formData, setFormData] = useState({
         // Data Utama
         kodeSap: "",
-        kodeUnit: "",
+        kodeUnit: "3215",
         deskripsi: "",
         luasTanah: "",
         tahunPerolehan: "",
@@ -95,7 +95,7 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
             setFormData({
                 // Data Utama
                 kodeSap: "",
-                kodeUnit: "",
+                kodeUnit: "3215",
                 deskripsi: "",
                 luasTanah: "",
                 tahunPerolehan: "",
@@ -198,7 +198,7 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
                         <h4 className="font-semibold text-gray-800 text-sm uppercase tracking-wide border-b pb-2">📋 Data Utama</h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Kode SAP *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor SAP *</label>
                                 <input
                                     required
                                     type="number"
@@ -209,13 +209,12 @@ export default function AssetFormModal({ isOpen, onClose, onSave, initialData }:
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Kode Unit *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Kode Unit</label>
                                 <input
-                                    required
                                     type="number"
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pln-blue/20 outline-none"
+                                    disabled
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                                     value={formData.kodeUnit}
-                                    onChange={(e) => setFormData({ ...formData, kodeUnit: e.target.value })}
                                     placeholder="3215"
                                 />
                             </div>

@@ -36,7 +36,7 @@ export type AsetTowerAvgAggregateOutputType = {
 }
 
 export type AsetTowerSumAggregateOutputType = {
-  kodeSap: number | null
+  kodeSap: bigint | null
   kodeUnit: number | null
   luasTanah: number | null
   tahunPerolehan: number | null
@@ -46,7 +46,7 @@ export type AsetTowerSumAggregateOutputType = {
 
 export type AsetTowerMinAggregateOutputType = {
   id: string | null
-  kodeSap: number | null
+  kodeSap: bigint | null
   kodeUnit: number | null
   deskripsi: string | null
   luasTanah: number | null
@@ -72,7 +72,7 @@ export type AsetTowerMinAggregateOutputType = {
 
 export type AsetTowerMaxAggregateOutputType = {
   id: string | null
-  kodeSap: number | null
+  kodeSap: bigint | null
   kodeUnit: number | null
   deskripsi: string | null
   luasTanah: number | null
@@ -309,7 +309,7 @@ export type AsetTowerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 
 export type AsetTowerGroupByOutputType = {
   id: string
-  kodeSap: number
+  kodeSap: bigint
   kodeUnit: number
   deskripsi: string | null
   luasTanah: number | null
@@ -358,7 +358,7 @@ export type AsetTowerWhereInput = {
   OR?: Prisma.AsetTowerWhereInput[]
   NOT?: Prisma.AsetTowerWhereInput | Prisma.AsetTowerWhereInput[]
   id?: Prisma.StringFilter<"AsetTower"> | string
-  kodeSap?: Prisma.IntFilter<"AsetTower"> | number
+  kodeSap?: Prisma.BigIntFilter<"AsetTower"> | bigint | number
   kodeUnit?: Prisma.IntFilter<"AsetTower"> | number
   deskripsi?: Prisma.StringNullableFilter<"AsetTower"> | string | null
   luasTanah?: Prisma.FloatNullableFilter<"AsetTower"> | number | null
@@ -415,7 +415,7 @@ export type AsetTowerWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.AsetTowerWhereInput | Prisma.AsetTowerWhereInput[]
   OR?: Prisma.AsetTowerWhereInput[]
   NOT?: Prisma.AsetTowerWhereInput | Prisma.AsetTowerWhereInput[]
-  kodeSap?: Prisma.IntFilter<"AsetTower"> | number
+  kodeSap?: Prisma.BigIntFilter<"AsetTower"> | bigint | number
   kodeUnit?: Prisma.IntFilter<"AsetTower"> | number
   deskripsi?: Prisma.StringNullableFilter<"AsetTower"> | string | null
   luasTanah?: Prisma.FloatNullableFilter<"AsetTower"> | number | null
@@ -476,7 +476,7 @@ export type AsetTowerScalarWhereWithAggregatesInput = {
   OR?: Prisma.AsetTowerScalarWhereWithAggregatesInput[]
   NOT?: Prisma.AsetTowerScalarWhereWithAggregatesInput | Prisma.AsetTowerScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"AsetTower"> | string
-  kodeSap?: Prisma.IntWithAggregatesFilter<"AsetTower"> | number
+  kodeSap?: Prisma.BigIntWithAggregatesFilter<"AsetTower"> | bigint | number
   kodeUnit?: Prisma.IntWithAggregatesFilter<"AsetTower"> | number
   deskripsi?: Prisma.StringNullableWithAggregatesFilter<"AsetTower"> | string | null
   luasTanah?: Prisma.FloatNullableWithAggregatesFilter<"AsetTower"> | number | null
@@ -502,7 +502,7 @@ export type AsetTowerScalarWhereWithAggregatesInput = {
 
 export type AsetTowerCreateInput = {
   id?: string
-  kodeSap?: number
+  kodeSap?: bigint | number
   kodeUnit?: number
   deskripsi?: string | null
   luasTanah?: number | null
@@ -529,7 +529,7 @@ export type AsetTowerCreateInput = {
 
 export type AsetTowerUncheckedCreateInput = {
   id?: string
-  kodeSap?: number
+  kodeSap?: bigint | number
   kodeUnit?: number
   deskripsi?: string | null
   luasTanah?: number | null
@@ -556,7 +556,7 @@ export type AsetTowerUncheckedCreateInput = {
 
 export type AsetTowerUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  kodeSap?: Prisma.IntFieldUpdateOperationsInput | number
+  kodeSap?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kodeUnit?: Prisma.IntFieldUpdateOperationsInput | number
   deskripsi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   luasTanah?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -583,7 +583,7 @@ export type AsetTowerUpdateInput = {
 
 export type AsetTowerUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  kodeSap?: Prisma.IntFieldUpdateOperationsInput | number
+  kodeSap?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kodeUnit?: Prisma.IntFieldUpdateOperationsInput | number
   deskripsi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   luasTanah?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -610,7 +610,7 @@ export type AsetTowerUncheckedUpdateInput = {
 
 export type AsetTowerCreateManyInput = {
   id?: string
-  kodeSap?: number
+  kodeSap?: bigint | number
   kodeUnit?: number
   deskripsi?: string | null
   luasTanah?: number | null
@@ -636,7 +636,7 @@ export type AsetTowerCreateManyInput = {
 
 export type AsetTowerUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  kodeSap?: Prisma.IntFieldUpdateOperationsInput | number
+  kodeSap?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kodeUnit?: Prisma.IntFieldUpdateOperationsInput | number
   deskripsi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   luasTanah?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -662,7 +662,7 @@ export type AsetTowerUpdateManyMutationInput = {
 
 export type AsetTowerUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  kodeSap?: Prisma.IntFieldUpdateOperationsInput | number
+  kodeSap?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kodeUnit?: Prisma.IntFieldUpdateOperationsInput | number
   deskripsi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   luasTanah?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -787,6 +787,14 @@ export type AsetTowerScalarRelationFilter = {
   isNot?: Prisma.AsetTowerWhereInput
 }
 
+export type BigIntFieldUpdateOperationsInput = {
+  set?: bigint | number
+  increment?: bigint | number
+  decrement?: bigint | number
+  multiply?: bigint | number
+  divide?: bigint | number
+}
+
 export type IntFieldUpdateOperationsInput = {
   set?: number
   increment?: number
@@ -843,7 +851,7 @@ export type AsetTowerUpdateOneRequiredWithoutFotoAsetNestedInput = {
 
 export type AsetTowerCreateWithoutFotoAsetInput = {
   id?: string
-  kodeSap?: number
+  kodeSap?: bigint | number
   kodeUnit?: number
   deskripsi?: string | null
   luasTanah?: number | null
@@ -869,7 +877,7 @@ export type AsetTowerCreateWithoutFotoAsetInput = {
 
 export type AsetTowerUncheckedCreateWithoutFotoAsetInput = {
   id?: string
-  kodeSap?: number
+  kodeSap?: bigint | number
   kodeUnit?: number
   deskripsi?: string | null
   luasTanah?: number | null
@@ -911,7 +919,7 @@ export type AsetTowerUpdateToOneWithWhereWithoutFotoAsetInput = {
 
 export type AsetTowerUpdateWithoutFotoAsetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  kodeSap?: Prisma.IntFieldUpdateOperationsInput | number
+  kodeSap?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kodeUnit?: Prisma.IntFieldUpdateOperationsInput | number
   deskripsi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   luasTanah?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -937,7 +945,7 @@ export type AsetTowerUpdateWithoutFotoAsetInput = {
 
 export type AsetTowerUncheckedUpdateWithoutFotoAsetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  kodeSap?: Prisma.IntFieldUpdateOperationsInput | number
+  kodeSap?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kodeUnit?: Prisma.IntFieldUpdateOperationsInput | number
   deskripsi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   luasTanah?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1113,7 +1121,7 @@ export type $AsetTowerPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    kodeSap: number
+    kodeSap: bigint
     kodeUnit: number
     deskripsi: string | null
     luasTanah: number | null
@@ -1560,7 +1568,7 @@ export interface Prisma__AsetTowerClient<T, Null = never, ExtArgs extends runtim
  */
 export interface AsetTowerFieldRefs {
   readonly id: Prisma.FieldRef<"AsetTower", 'String'>
-  readonly kodeSap: Prisma.FieldRef<"AsetTower", 'Int'>
+  readonly kodeSap: Prisma.FieldRef<"AsetTower", 'BigInt'>
   readonly kodeUnit: Prisma.FieldRef<"AsetTower", 'Int'>
   readonly deskripsi: Prisma.FieldRef<"AsetTower", 'String'>
   readonly luasTanah: Prisma.FieldRef<"AsetTower", 'Float'>

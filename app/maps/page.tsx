@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
-    X, ExternalLink, TowerControl, Calendar, Ruler, MapPin,
+    X, ExternalLink, Calendar, Ruler, MapPin,
     CheckCircle2, AlertCircle, Search, ChevronRight, Copy, Zap, Info
 } from "lucide-react";
 
@@ -358,7 +358,7 @@ export default function MapsPage() {
                             <p className="text-[9px] font-semibold text-gray-500 mb-1">Jenis Aset</p>
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center justify-center w-4 h-4 rounded bg-gray-100/50">
-                                    <TowerControl size={14} className="text-gray-700" />
+                                    <MapPin size={14} className="text-gray-700" />
                                 </div>
                                 <span className="text-[10px] font-medium text-gray-600">Tapak Tower</span>
                             </div>
@@ -394,7 +394,7 @@ export default function MapsPage() {
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                        <TowerControl size={24} />
+                                        <MapPin size={24} />
                                     </div>
                                 )}
                             </div>

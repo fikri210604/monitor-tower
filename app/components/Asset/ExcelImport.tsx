@@ -462,7 +462,7 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                                 {importErrors.map((err, idx) => (
                                     <div key={idx} className="text-xs bg-white p-2 rounded border border-orange-200">
                                         <span className="font-medium">Baris {err.row}</span>
-                                        {err.kodeSap && <span className="text-gray-500"> (Kode SAP: {err.kodeSap})</span>}
+                                        {err.kodeSap && <span className="text-gray-500"> (Nomor SAP: {err.kodeSap})</span>}
                                         <p className="text-orange-600 mt-1">{err.reason}</p>
                                     </div>
                                 ))}

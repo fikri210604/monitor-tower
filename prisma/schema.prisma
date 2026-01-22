@@ -22,7 +22,7 @@ model User {
 
 model AsetTower {
   id                     String                @id @default(uuid())
-  kodeSap                Int                   @default(10100)
+  kodeSap                BigInt                @default(10100)
   kodeUnit               Int                   @default(3215)
   deskripsi              String?
   luasTanah              Float?

@@ -95,7 +95,7 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
 
                 <button
                     onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500 text-red-100 hover:text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white hover:text-white rounded-lg transition-colors duration-200 text-sm font-medium"
                 >
                     <LogOut className="w-4 h-4" />
                     Sign Out
