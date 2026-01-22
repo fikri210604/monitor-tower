@@ -65,10 +65,10 @@ export async function GET(req: NextRequest) {
         maskedLinkSertifikat = null; // Mask sensitive data
       }
 
-      // Return plain object directly, handling BigInt manually if present (none in current schema seems to be BigInt?)
-      // If there are BigInts, we must .toString() them. Prisma returns Number for Int.
+      // Return plain object directly, converting BigInt to Number for JSON serialization
       return {
         ...asset,
+        kodeSap: Number(asset.kodeSap), // Convert BigInt to Number
         fotoAset: visiblePhotos,
         nomorSertifikat: maskedNomorSertifikat,
         linkSertifikat: maskedLinkSertifikat

@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
         // If ID is BigInt, we convert it.
         const serializedMarkers = markers.map(m => ({
             id: m.id,
-            kodeSap: m.kodeSap,
+            kodeSap: Number(m.kodeSap), // Convert BigInt to Number
             koordinatX: m.koordinatX,
             koordinatY: m.koordinatY,
             jenisBangunan: m.jenisBangunan,
