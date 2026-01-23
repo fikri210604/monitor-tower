@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Edit, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Edit, Trash2, Eye } from "lucide-react";
 import { useEffect } from "react";
 import { UserTableProps, UserSortField, SortOrder, User } from "@/types/user";
 import { useUserTableFilters } from "@/hooks/useUserTableFilters";
@@ -15,6 +15,7 @@ export default function UserTable({
     users,
     onDelete,
     onEdit,
+    onView,
 }: UserTableProps) {
     // Use custom hooks
     const {
@@ -148,6 +149,7 @@ export default function UserTable({
                                     user={user}
                                     onDelete={onDelete}
                                     onEdit={onEdit}
+                                    onView={onView}
                                 />
                             ))
                         )}
@@ -282,10 +284,12 @@ function UserTableRow({
     user,
     onDelete,
     onEdit,
+    onView,
 }: {
     user: User;
     onDelete: (id: string) => void;
     onEdit: (user: User) => void;
+    onView: (user: User) => void;
 }) {
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("id-ID", {
@@ -331,6 +335,14 @@ function UserTableRow({
             </td>
 
             <td className="px-4 py-3 flex justify-end gap-2">
+                <button
+                    title="Lihat Detail"
+                    onClick={() => onView(user)}
+                    className="p-1.5 rounded-lg transition-colors text-blue-500 hover:bg-blue-50"
+                >
+                    <Eye className="w-4 h-4" />
+                </button>
+
                 <button
                     title="Edit"
                     onClick={() => onEdit(user)}

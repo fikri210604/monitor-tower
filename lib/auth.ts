@@ -37,10 +37,22 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const { isBcryptHash, decrypt } = await import("@/lib/crypto");
+        let passwordMatch = false;
+
+        try {
+          if (isBcryptHash(user.password)) {
+            // Legacy Bcrypt
+            passwordMatch = await bcrypt.compare(credentials.password, user.password);
+          } else {
+            // New AES
+            const decrypted = decrypt(user.password);
+            passwordMatch = credentials.password === decrypted;
+          }
+        } catch (error) {
+          console.error("Auth Error:", error);
+          return null;
+        }
 
         if (!passwordMatch) {
           return null;
