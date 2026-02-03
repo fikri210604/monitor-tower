@@ -120,12 +120,9 @@ export default async function Dashboard() {
     const sertifikasiSelesai = towerStats.certified + giStats.certified;
     const asetAman = towerStats.safe + giStats.safe;
     const asetMasalah = towerStats.problem + giStats.problem;
-    const asetUnknown = towerStats.unknownHealth + giStats.unknownHealth;
+    const totalTanpaData = towerStats.nullCert + giStats.nullCert;
 
-    const masalahAktif = asetMasalah; // Explicit explicit problem count
-    // If we want "Action Needed", maybe include Unknown? "datanya gaada" -> "abu-abu". 
-    // Usually "Action Needed" implies known problems. Unknown might be "Data Incomplete".
-
+    const masalahAktif = asetMasalah;
     const sertifikasiPercentage = totalAset > 0 ? Math.round((sertifikasiSelesai / totalAset) * 100) : 0;
 
     return (
@@ -146,7 +143,7 @@ export default async function Dashboard() {
             <ExpiryWidget expiringAssets={expiringAssets} />
 
             {/* Main Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <StatCard
                     title="Total Aset"
                     value={totalAset}
@@ -170,6 +167,12 @@ export default async function Dashboard() {
                     value={masalahAktif}
                     subtitle="Perlu Tindak Lanjut"
                     color="text-red-500"
+                />
+                <StatCard
+                    title="Tanpa Data"
+                    value={totalTanpaData}
+                    subtitle="Tidak Ada Kode SAP"
+                    color="text-gray-400"
                 />
             </div>
 
