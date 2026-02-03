@@ -26,19 +26,15 @@ export default async function Dashboard() {
         const total = await prisma.asetTower.count({ where: { jenisBangunan: type } });
 
         // 2. Tanpa Data (Gray): No Kode SAP
-        const tanpaDataCount = await prisma.asetTower.count({
-            where: {
-                jenisBangunan: type,
-                kodeSap: null
-            }
-        });
+        // Schema enforces kodeSap is not null, so this count is 0.
+        const tanpaDataCount = 0;
 
         // 3. Certified (Green): Has Kode SAP AND Has Valid Certificate
         // Valid = not null, not "", not "-"
         const certifiedCount = await prisma.asetTower.count({
             where: {
                 jenisBangunan: type,
-                kodeSap: { not: null },
+                // kodeSap is required/not-null by schema
                 nomorSertifikat: {
                     not: null,
                     notIn: ["", "-"]
@@ -108,11 +104,6 @@ export default async function Dashboard() {
         })
     ]);
 
-    // Aggregate for legacy summary cards (or choose one to show? Or sum them?)
-    // User wants split dashboard. I will pass both stats to Client Component.
-    // For top summary cards, I will show TOTAL (Sum of both) for high level overview,
-    // but maybe valid to split there too? User said "Dashboardnya buat menampilkan ... dipisah".
-    // I'll sum them for the top generic cards, but the Charts will be split.
     const totalAset = towerStats.total + giStats.total;
     const sertifikasiSelesai = towerStats.certified + giStats.certified;
     const asetAman = towerStats.safe + giStats.safe;

@@ -1,36 +1,164 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sertifikasi Aset Tower PLN (Sistem Informasi Monitoring)
 
-## Getting Started
+Sistem Informasi berbasis Web untuk memonitoring sertifikasi aset tanah tower PLN (Unit Sentral) dengan visualisasi geospasial (Peta). Sistem ini membantu memetakan aset, melacak status sertifikasi (SHM/HGB/dll), dan mengidentifikasi permasalahan aset (Tumpak Tindih, Sengketa, dll).
 
-First, run the development server:
+## 🚀 Fitur Utama
+
+- **Dashboard Monitoring**: Statistik real-time total aset, sertifikasi, aset bermasalah, dan _expiry warning_ (sertifikat akan habis).
+- **Peta Geospasial (GIS)**: Visualisasi lokasi tower/aset menggunakan Leaflet.js dengan fitur clustering.
+  - Marker berwarna berdasarkan status (Hijau = Aman, Merah = Bermasalah).
+  - Pop-up detail aset.
+- **Manajemen Aset**: CRUD data aset tower.
+- **Import Data Excel**: Fitur bulk import data aset dari file Excel dengan validasi otomatis.
+- **Role-Based Access Control (RBAC)**:
+  - **Master**: Akses penuh (Manajemen User, Aset, Import).
+  - **Admin**: Akses manajemen operasi.
+  - **Operator**: Akses khusus operasional lapangan (View Only / Update Terbatas).
+- **Sistem Notifikasi**: Peringatan otomatis untuk sertifikat yang akan kadaluarsa dalam 30 hari.
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 14+](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Auth**: [NextAuth.js](https://next-auth.js.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Maps**: [Leaflet](https://leafletjs.com/) & React-Leaflet
+- **Icons**: [Lucide React](https://lucide.dev/)
+
+## ⚙️ Cara Instalasi & Setup
+
+Ikuti langkah-langkah berikut untuk menjalankan aplikasi di lokal:
+
+### 1. Prasyarat
+
+- Node.js (v18 ke atas)
+- PostgreSQL Database (Local atau Cloud seperti Neon/Supabase)
+
+### 2. Instalasi Dependensi
+
+```bash
+npm install
+```
+
+### 3. Konfigurasi Environment (.env)
+
+Buat file `.env` di root folder dan sesuaikan isinya:
+
+```env
+# Database Connection String
+DATABASE_URL="postgresql://user:password@localhost:5432/sertifikasi_tower?schema=public"
+
+# NextAuth Secret (Bebas, bisa generate random string)
+NEXTAUTH_SECRET="rahasia_dapur_pln_2024"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+### 4. Setup Database
+
+Jalankan migrasi prisma untuk membuat tabel:
+
+```bash
+npx prisma db push
+```
+
+Jalankan seeder untuk mengisi data awal (User default & Dummy Assets):
+
+```bash
+npx prisma db seed
+```
+
+### 5. Jalankan Aplikasi
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka [http://localhost:3000](http://localhost:3000) di browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔑 Akun Default (Seeder)
 
-## Learn More
+Gunakan akun berikut untuk login pertama kali:
 
-To learn more about Next.js, take a look at the following resources:
+| Role         | Username   | Password      | Deskripsi                            |
+| :----------- | :--------- | :------------ | :----------------------------------- |
+| **MASTER**   | `master`   | `master123`   | Akses penuh sistem & user management |
+| **ADMIN**    | `admin`    | `admin123`    | Administrator operasional            |
+| **OPERATOR** | `operator` | `operator123` | User lapangan / view only            |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> **Catatan**: Password user disimpan menggunakan hash bcrypt.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 📊 Mapping Import Excel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Fitur import Excel menggunakan logika mapping pintar. Pastikan header kolom Excel Anda sesuai (case-insensitive sebagian, tapi disarankan ikuti format di bawah).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Format Kolom Excel
+
+| Header Excel (Diharapkan) | Field Database           | Tipe Data | Keterangan / Default                                                                                       |
+| :------------------------ | :----------------------- | :-------- | :--------------------------------------------------------------------------------------------------------- |
+| `kodeSap`                 | `kodeSap`                | Number    | **Primary Key**. Jika kosong, auto-generate (10000+). Jika ada duplikat di DB, sistem akan mencoba update. |
+| `kodeUnit`                | `kodeUnit`               | Number    | Default: `3215`                                                                                            |
+| `deskripsi`               | `deskripsi`              | String    | Nama/Keterangan Aset                                                                                       |
+| `alamat`                  | `alamat`                 | String    | Alamat aset                                                                                                |
+| `desa`                    | `desa`                   | String    | Kelurahan/Desa                                                                                             |
+| `kecamatan`               | `kecamatan`              | String    | Kecamatan                                                                                                  |
+| `kabupaten`               | `kabupaten`              | String    | Kabupaten/Kota                                                                                             |
+| `provinsi`                | `provinsi`               | String    | Default: `LAMPUNG`                                                                                         |
+| `koordinatX`              | `koordinatX`             | Float     | Longitude (Garis Bujur)                                                                                    |
+| `koordinatY`              | `koordinatY`             | Float     | Latitude (Garis Lintang)                                                                                   |
+| `luasTanah`               | `luasTanah`              | Float     | Luas dalam m2                                                                                              |
+| `tahunPerolehan`          | `tahunPerolehan`         | Int       | Tahun aset didapat                                                                                         |
+| `jenisDokumen`            | `jenisDokumen`           | String    | Contoh: SHM, HGB                                                                                           |
+| `nomorSertifikat`         | `nomorSertifikat`        | String    | Nomor dokumen legal                                                                                        |
+| `tanggalAwalSertifikat`   | `tanggalAwalSertifikat`  | Date      | Format: `DD/MM/YYYY` atau `YYYY-MM-DD`                                                                     |
+| `tanggalAkhirSertifikat`  | `tanggalAkhirSertifikat` | Date      | Format: `DD/MM/YYYY` atau `YYYY-MM-DD`                                                                     |
+| `penguasaanTanah`         | `penguasaanTanah`        | Enum      | Pilihan: `DIKUASAI`, `TIDAK_DIKUASAI`. Default: `DIKUASAI`                                                 |
+| `jenisBangunan`           | `jenisBangunan`          | Enum      | Pilihan: `TAPAK_TOWER`, `GARDU_INDUK`. Default: `TAPAK_TOWER`                                              |
+| `permasalahanAset`        | `permasalahanAset`       | Enum      | Pilihan: `CLEAN_AND_CLEAR`, `TUMPAK_TINDIH`, dll. Default: `CLEAN_AND_CLEAR`                               |
+
+### Logika Import
+
+1.  **Replace All**: Jika opsi ini dipilih saat upload, **SEMUA** data aset lama akan dihapus sebelum import baru.
+2.  **Smart Update**: Jika tidak replace all, sistem mengecek `kodeSap`.
+    - Jika `kodeSap` sudah ada -> **Update** data tersebut.
+    - Jika `kodeSap` belum ada -> **Insert** data baru.
+
+---
+
+## 📂 Struktur Folder Projek
+
+```
+sertifikasi_tower/
+├── app/                    # Next.js App Router
+│   ├── api/                # Backend API Routes (Import, Auth, dll)
+│   ├── assets/             # Halaman Manajemen Aset
+│   ├── auth/               # Halaman Login
+│   ├── components/         # Komponen UI (Map, Sidebar, Navbar)
+│   ├── dashboard/          # Halaman Dashboard Utama
+│   ├── maps/               # Halaman Peta Besar
+│   └── ...
+├── lib/                    # Library / Helper Functions
+│   ├── prisma.ts           # Koneksi DB Singleton
+│   ├── auth.ts             # Konfigurasi NextAuth
+│   └── ...
+├── prisma/                 # Database Config
+│   ├── schema.prisma       # Schema Database
+│   └── seed.ts             # Data Awal (Seeder)
+├── public/                 # File Statis (Gambar, Icon)
+└── ...
+```
+
+## ⚠️ Troubleshooting
+
+1.  **Gagal Connect Database**: Pastikan URL di `.env` benar dan PostgreSQL service berjalan.
+2.  **Import Excel Error**: Cek format tanggal di Excel. Pastikan menggunakan format Text atau Date yang valid (DD/MM/YYYY).
+3.  **Map Tidak Muncul**: Pastikan file CSS Leaflet ter-load di `layout.tsx` atau `globals.css` (biasanya otomatis via `react-leaflet`).
+
+---
+
+_Dibuat untuk Kerja Praktik (KP) - Monitoring Sertifikasi Aset Tower PLN._
