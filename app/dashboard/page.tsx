@@ -51,10 +51,18 @@ export default async function Dashboard() {
         const belumCount = total - tanpaDataCount - certifiedCount;
 
         // Asset Health Stats
-        const safe = await prisma.asetTower.count({ where: { jenisBangunan: type, permasalahanAset: { contains: "clean", mode: "insensitive" } } });
+        // Asset Health Stats
+        const safe = await prisma.asetTower.count({
+            where: {
+                jenisBangunan: type,
+                kodeSap: { not: null },
+                permasalahanAset: { contains: "clean", mode: "insensitive" }
+            }
+        });
         const problem = await prisma.asetTower.count({
             where: {
                 jenisBangunan: type,
+                kodeSap: { not: null },
                 permasalahanAset: { not: null },
                 NOT: { permasalahanAset: { contains: "clean", mode: "insensitive" } }
             }
