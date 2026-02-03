@@ -26,15 +26,19 @@ export default async function Dashboard() {
         const total = await prisma.asetTower.count({ where: { jenisBangunan: type } });
 
         // 2. Tanpa Data (Gray): No Kode SAP
-        // Schema enforces kodeSap is not null, so this count is 0.
-        const tanpaDataCount = 0;
+        const tanpaDataCount = await prisma.asetTower.count({
+            where: {
+                jenisBangunan: type,
+                kodeSap: null
+            }
+        });
 
         // 3. Certified (Green): Has Kode SAP AND Has Valid Certificate
         // Valid = not null, not "", not "-"
         const certifiedCount = await prisma.asetTower.count({
             where: {
                 jenisBangunan: type,
-                // kodeSap is required/not-null by schema
+                kodeSap: { not: null },
                 nomorSertifikat: {
                     not: null,
                     notIn: ["", "-"]
