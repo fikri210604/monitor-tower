@@ -9,7 +9,7 @@ import L from "leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 
 import Link from "next/link";
-import {CheckCircle2, AlertCircle, MapPin, ExternalLink, Copy, Ruler, Calendar, Zap, ArrowRight } from "lucide-react";
+import { CheckCircle2, AlertCircle, MapPin, ExternalLink, Copy, Ruler, Calendar, Zap, ArrowRight } from "lucide-react";
 import { renderToString } from "react-dom/server";
 import PhotoLightbox from "../Shared/PhotoLightbox";
 
@@ -48,8 +48,9 @@ export default function Map({
     focusedLocation = null,
     onMarkerClick,
     mapStyle = "STREET",
-    selectedMarkerId = null
-}: MapProps) {
+    selectedMarkerId = null,
+    enableClustering = true,
+}: MapProps & { enableClustering?: boolean }) {
     useEffect(() => {
         fixLeafletIcon();
     }, []);
@@ -59,13 +60,7 @@ export default function Map({
 
     // Define Icons Factory
     const getIcon = (status: boolean, type: string | null) => {
-        const isProblem = !status; // status passed here is 'isSafe' basically, wait. Logic below:
-        // Let's pass 'isProblem' directly or 'color'.
-        // Simplified:
-        // Blue = Safe (Ada Sertifikat usually means safe in validMarkers logic?)
-        // Actually earlier logic: Blue = Safe Config, Red = Problem.
-        // Let's stick to: Blue Icon = OK, Red Icon = Problem.
-
+        const isProblem = !status;
         const color = isProblem ? "#ef4444" : "#2563eb";
         const bgColor = isProblem ? "#fef2f2" : "#eff6ff";
 
@@ -121,10 +116,6 @@ export default function Map({
         // Icon logic
         const hasCert = hasCertificate(marker);
         const isGardu = marker.jenisBangunan === "GARDU_INDUK";
-        // Logic: If Certificate Exists -> Blue/Safe. If No Cert -> Red/Problem.
-        // Wait, earlier logic was: isProblem = !clean.
-        // Let's stick to the visibleMarkers logic in previous code:
-        // iconToUse = hasCert ? (isGardu ? garduSafe : towerSafe) : (isGardu ? garduProblem : towerProblem);
         const iconToUse = hasCert ? (isGardu ? garduSafe : towerSafe) : (isGardu ? garduProblem : towerProblem);
 
         useEffect(() => {
@@ -318,20 +309,30 @@ export default function Map({
                     />
                 )}
 
-                <MarkerClusterGroup
-                    chunkedLoading
-                    iconCreateFunction={createClusterCustomIcon}
-                    maxClusterRadius={60}
-                    spiderfyOnMaxZoom={true}
-                >
-                    {validMarkers.map((marker, idx) => (
+                {enableClustering ? (
+                    <MarkerClusterGroup
+                        chunkedLoading
+                        iconCreateFunction={createClusterCustomIcon}
+                        maxClusterRadius={60}
+                        spiderfyOnMaxZoom={true}
+                    >
+                        {validMarkers.map((marker, idx) => (
+                            <MarkerItem
+                                key={marker.id || idx}
+                                marker={marker}
+                                isSelected={selectedMarkerId === marker.id}
+                            />
+                        ))}
+                    </MarkerClusterGroup>
+                ) : (
+                    validMarkers.map((marker, idx) => (
                         <MarkerItem
                             key={marker.id || idx}
                             marker={marker}
                             isSelected={selectedMarkerId === marker.id}
                         />
-                    ))}
-                </MarkerClusterGroup>
+                    ))
+                )}
             </MapContainer>
 
             {lightboxPhotos && (

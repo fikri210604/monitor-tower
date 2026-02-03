@@ -24,6 +24,7 @@ export default function MapsPage() {
     const [filterType, setFilterType] = useState<"ALL" | "TOWER" | "GARDU">("ALL");
     const [filterCert, setFilterCert] = useState<"ALL" | "CERTIFIED" | "UNCERTIFIED">("ALL");
     const [mapStyle, setMapStyle] = useState<"STREET" | "SATELLITE">("STREET");
+    const [enableClustering, setEnableClustering] = useState(true);
     const [showFilters, setShowFilters] = useState(false);
     const [showLegend, setShowLegend] = useState(true);
 
@@ -107,6 +108,7 @@ export default function MapsPage() {
                 markers={mapAssets}
                 focusedLocation={focusedLocation}
                 mapStyle={mapStyle}
+                enableClustering={enableClustering}
                 selectedMarkerId={selectedAsset?.id}
                 onMarkerClick={(asset) => {
                     setSelectedAsset(asset);
@@ -207,6 +209,31 @@ export default function MapsPage() {
                                             }`}
                                     >
                                         🛰️ Satelit
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Clustering Toggle Group */}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Mode Marker</label>
+                                <div className="flex bg-gray-100/80 p-1 rounded-xl gap-1">
+                                    <button
+                                        onClick={() => setEnableClustering(true)}
+                                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${enableClustering
+                                            ? "bg-white text-gray-800 shadow-sm ring-1 ring-black/5"
+                                            : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
+                                            }`}
+                                    >
+                                        🫧 Grup
+                                    </button>
+                                    <button
+                                        onClick={() => setEnableClustering(false)}
+                                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${!enableClustering
+                                            ? "bg-white text-gray-800 shadow-sm ring-1 ring-black/5"
+                                            : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
+                                            }`}
+                                    >
+                                        📍 Semua
                                     </button>
                                 </div>
                             </div>
@@ -374,100 +401,102 @@ export default function MapsPage() {
             </div>
 
             {/* --- MOBILE BOTTOM SHEET (COMPACT) --- */}
-            {selectedAsset && (
-                <div className="absolute z-[500] bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.15)] bottom-0 left-0 w-full rounded-t-2xl border-t border-gray-200 animate-in slide-in-from-bottom-10 md:hidden pb-safe flex flex-col max-h-[85vh]">
-                    {/* Drag Handle */}
-                    <div onClick={() => setSelectedAsset(null)} className="w-full flex justify-center py-3 cursor-pointer active:bg-gray-50 shrink-0">
-                        <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-                    </div>
+            {
+                selectedAsset && (
+                    <div className="absolute z-[500] bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.15)] bottom-0 left-0 w-full rounded-t-2xl border-t border-gray-200 animate-in slide-in-from-bottom-10 md:hidden pb-safe flex flex-col max-h-[85vh]">
+                        {/* Drag Handle */}
+                        <div onClick={() => setSelectedAsset(null)} className="w-full flex justify-center py-3 cursor-pointer active:bg-gray-50 shrink-0">
+                            <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                        </div>
 
-                    <div className="px-5 pb-6 space-y-4 overflow-y-auto custom-scrollbar">
-                        {/* Header: Photo & Basic Info */}
-                        <div className="flex gap-4">
-                            {/* Photo Thumbnail */}
-                            <div className="w-20 h-20 shrink-0 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative">
-                                {selectedAsset.fotoAset && selectedAsset.fotoAset.length > 0 ? (
-                                    <img
-                                        src={selectedAsset.fotoAset[0].url}
-                                        alt="Aset"
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                        <MapPin size={24} />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Title & Status */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                                        SAP: {selectedAsset.kodeSap}
-                                    </span>
-                                    {selectedAsset.permasalahanAset && !selectedAsset.permasalahanAset.toLowerCase().includes("clean") ? (
-                                        <span className="text-[10px] font-bold bg-red-50 text-red-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                            <AlertCircle size={10} /> Masalah
-                                        </span>
+                        <div className="px-5 pb-6 space-y-4 overflow-y-auto custom-scrollbar">
+                            {/* Header: Photo & Basic Info */}
+                            <div className="flex gap-4">
+                                {/* Photo Thumbnail */}
+                                <div className="w-20 h-20 shrink-0 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative">
+                                    {selectedAsset.fotoAset && selectedAsset.fotoAset.length > 0 ? (
+                                        <img
+                                            src={selectedAsset.fotoAset[0].url}
+                                            alt="Aset"
+                                            className="w-full h-full object-cover"
+                                        />
                                     ) : (
-                                        <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                            <CheckCircle2 size={10} /> Aman
-                                        </span>
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                            <MapPin size={24} />
+                                        </div>
                                     )}
                                 </div>
-                                <h2 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2 mb-1">
-                                    {selectedAsset.deskripsi || "Aset Tanpa Nama"}
-                                </h2>
-                                <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
-                                    <MapPin size={12} />
-                                    {selectedAsset.alamat || "Alamat kosong"}
-                                </p>
-                            </div>
-                        </div>
 
-                        {/* Grid Data */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Sertifikat</p>
-                                <div className={`text-xs font-bold flex items-center gap-1.5 ${hasCertificate(selectedAsset) ? "text-emerald-600" : "text-amber-600"}`}>
-                                    {hasCertificate(selectedAsset) ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
-                                    {hasCertificate(selectedAsset) ? "Ada" : "Belum"}
+                                {/* Title & Status */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                            SAP: {selectedAsset.kodeSap}
+                                        </span>
+                                        {selectedAsset.permasalahanAset && !selectedAsset.permasalahanAset.toLowerCase().includes("clean") ? (
+                                            <span className="text-[10px] font-bold bg-red-50 text-red-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                                <AlertCircle size={10} /> Masalah
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                                <CheckCircle2 size={10} /> Aman
+                                            </span>
+                                        )}
+                                    </div>
+                                    <h2 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2 mb-1">
+                                        {selectedAsset.deskripsi || "Aset Tanpa Nama"}
+                                    </h2>
+                                    <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                                        <MapPin size={12} />
+                                        {selectedAsset.alamat || "Alamat kosong"}
+                                    </p>
                                 </div>
                             </div>
-                            <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Tahun</p>
-                                <div className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                                    <Calendar size={14} className="text-gray-400" />
-                                    {selectedAsset.tahunPerolehan || "-"}
+
+                            {/* Grid Data */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Sertifikat</p>
+                                    <div className={`text-xs font-bold flex items-center gap-1.5 ${hasCertificate(selectedAsset) ? "text-emerald-600" : "text-amber-600"}`}>
+                                        {hasCertificate(selectedAsset) ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                                        {hasCertificate(selectedAsset) ? "Ada" : "Belum"}
+                                    </div>
+                                </div>
+                                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Tahun</p>
+                                    <div className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                                        <Calendar size={14} className="text-gray-400" />
+                                        {selectedAsset.tahunPerolehan || "-"}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                            {/* Tombol Detail (Primary) */}
-                            <a
-                                href={`/assets/${selectedAsset.id}`}
-                                className="col-span-2 flex items-center justify-center gap-2 w-full py-3 bg-pln-blue text-white rounded-xl text-sm font-bold shadow-sm hover:bg-blue-700 active:scale-95 transition-all"
-                            >
-                                Lihat Detail Lengkap
-                                <ChevronRight size={16} />
-                            </a>
+                            {/* Actions */}
+                            <div className="grid grid-cols-2 gap-3 pt-2">
+                                {/* Tombol Detail (Primary) */}
+                                <a
+                                    href={`/assets/${selectedAsset.id}`}
+                                    className="col-span-2 flex items-center justify-center gap-2 w-full py-3 bg-pln-blue text-white rounded-xl text-sm font-bold shadow-sm hover:bg-blue-700 active:scale-95 transition-all"
+                                >
+                                    Lihat Detail Lengkap
+                                    <ChevronRight size={16} />
+                                </a>
 
-                            {/* Tombol Navigasi (Secondary) */}
-                            <a
-                                href={`https://www.google.com/maps/dir/?api=1&destination=${selectedAsset.koordinatY},${selectedAsset.koordinatX}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="col-span-2 flex items-center justify-center gap-2 w-full py-2.5 bg-white text-gray-700 border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                            >
-                                <ExternalLink size={14} />
-                                Rute ke Lokasi
-                            </a>
+                                {/* Tombol Navigasi (Secondary) */}
+                                <a
+                                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedAsset.koordinatY},${selectedAsset.koordinatX}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="col-span-2 flex items-center justify-center gap-2 w-full py-2.5 bg-white text-gray-700 border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                >
+                                    <ExternalLink size={14} />
+                                    Rute ke Lokasi
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

@@ -20,24 +20,63 @@ export default async function Dashboard() {
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(today.getDate() + 30);
 
-    // 1. Fetch Basic Stats (Parallel)
-    const [
-        totalAset,
-        sertifikasiSelesai,
-        asetAman,
-        recentAssets,
-        expiringAssets
-    ] = await Promise.all([
-        prisma.asetTower.count(),
-        prisma.asetTower.count({ where: { nomorSertifikat: { not: null } } }),
-        prisma.asetTower.count({
+    // 1. Helper to fetch Stats by Type
+    const getStats = async (type: any) => {
+        // 1. Total Assets of type
+        const total = await prisma.asetTower.count({ where: { jenisBangunan: type } });
+
+        // 2. Tanpa Data (Gray): No Kode SAP
+        const tanpaDataCount = await prisma.asetTower.count({
             where: {
-                OR: [
-                    { permasalahanAset: null },
-                    { permasalahanAset: { contains: "clean", mode: "insensitive" } }
-                ]
+                jenisBangunan: type,
+                kodeSap: null
             }
-        }),
+        });
+
+        // 3. Certified (Green): Has Kode SAP AND Has Valid Certificate
+        // Valid = not null, not "", not "-"
+        const certifiedCount = await prisma.asetTower.count({
+            where: {
+                jenisBangunan: type,
+                kodeSap: { not: null },
+                nomorSertifikat: {
+                    not: null,
+                    notIn: ["", "-"]
+                }
+            }
+        });
+
+        // 4. Belum (Orange): The remainder.
+        // Logic: Total = TanpaData + Certified + Belum
+        const belumCount = total - tanpaDataCount - certifiedCount;
+
+        // Asset Health Stats
+        const safe = await prisma.asetTower.count({ where: { jenisBangunan: type, permasalahanAset: { contains: "clean", mode: "insensitive" } } });
+        const problem = await prisma.asetTower.count({
+            where: {
+                jenisBangunan: type,
+                permasalahanAset: { not: null },
+                NOT: { permasalahanAset: { contains: "clean", mode: "insensitive" } }
+            }
+        });
+
+        // Unknown Health (Tanpa Data for Health)
+        const unknownHealth = total - safe - problem;
+
+        return {
+            total,
+            certified: certifiedCount,
+            belum: belumCount,
+            nullCert: tanpaDataCount,
+            safe,
+            problem,
+            unknownHealth
+        };
+    };
+
+    const [towerStats, giStats, recentAssets, expiringAssets] = await Promise.all([
+        getStats("TAPAK_TOWER"),
+        getStats("GARDU_INDUK"),
         // Fetch 5 most recent assets
         prisma.asetTower.findMany({
             take: 5,
@@ -50,12 +89,12 @@ export default async function Dashboard() {
                 permasalahanAset: true
             }
         }),
-        // Fetch Expiring Certificates (End Date <= 30 Days from now AND End Date >= Today)
+        // Fetch Expiring Certificates
         prisma.asetTower.findMany({
             where: {
                 tanggalAkhirSertifikat: {
                     lte: thirtyDaysFromNow,
-                    gte: today // Optional: Don't show already expired? Or maybe show them too? Let's show all upcoming + expired for now.
+                    gte: today
                 }
             },
             take: 10,
@@ -69,7 +108,21 @@ export default async function Dashboard() {
         })
     ]);
 
-    const masalahAktif = totalAset - asetAman;
+    // Aggregate for legacy summary cards (or choose one to show? Or sum them?)
+    // User wants split dashboard. I will pass both stats to Client Component.
+    // For top summary cards, I will show TOTAL (Sum of both) for high level overview,
+    // but maybe valid to split there too? User said "Dashboardnya buat menampilkan ... dipisah".
+    // I'll sum them for the top generic cards, but the Charts will be split.
+    const totalAset = towerStats.total + giStats.total;
+    const sertifikasiSelesai = towerStats.certified + giStats.certified;
+    const asetAman = towerStats.safe + giStats.safe;
+    const asetMasalah = towerStats.problem + giStats.problem;
+    const asetUnknown = towerStats.unknownHealth + giStats.unknownHealth;
+
+    const masalahAktif = asetMasalah; // Explicit explicit problem count
+    // If we want "Action Needed", maybe include Unknown? "datanya gaada" -> "abu-abu". 
+    // Usually "Action Needed" implies known problems. Unknown might be "Data Incomplete".
+
     const sertifikasiPercentage = totalAset > 0 ? Math.round((sertifikasiSelesai / totalAset) * 100) : 0;
 
     return (
@@ -129,9 +182,8 @@ export default async function Dashboard() {
                         {/* Interactive Charts */}
                         <div className="md:col-span-2">
                             <DashboardCharts
-                                total={totalAset}
-                                certified={sertifikasiSelesai}
-                                safe={asetAman}
+                                tower={towerStats}
+                                gi={giStats}
                             />
                         </div>
 
