@@ -72,10 +72,8 @@ export async function POST(req: NextRequest) {
       const rowNumber = i + 1;
 
       try {
-        // Auto-generate kodeSap if missing
-        if (!item.kodeSap) {
-          item.kodeSap = 10000 + rowNumber;
-        }
+        // Auto-generate kodeSap removed. If missing, it should be null.
+        // if (!item.kodeSap) { ... }
 
         // Defaults
         if (!item.jenisBangunan) item.jenisBangunan = "TAPAK_TOWER";
@@ -112,7 +110,7 @@ export async function POST(req: NextRequest) {
         const tanggalAkhir = parseExcelDate(item.tanggalAkhirSertifikat);
 
         const assetData = {
-          kodeSap: Number(item.kodeSap),
+          kodeSap: item.kodeSap ? Number(item.kodeSap) : null,
           kodeUnit: item.kodeUnit ? Number(item.kodeUnit) : 3215,
           deskripsi: item.deskripsi || null,
           luasTanah: item.luasTanah ? parseFloat(item.luasTanah) : null,
@@ -136,7 +134,10 @@ export async function POST(req: NextRequest) {
 
         // Smart Matching Logic:
         // Check if there are any available IDs for this kodeSap
-        const availableIds = existingMap.get(assetData.kodeSap);
+        let availableIds: string[] | undefined;
+        if (assetData.kodeSap !== null) {
+          availableIds = existingMap.get(assetData.kodeSap);
+        }
 
         if (availableIds && availableIds.length > 0) {
           // CONSUME one ID from the queue
