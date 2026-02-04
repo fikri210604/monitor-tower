@@ -80,6 +80,12 @@ export async function POST(req: NextRequest) {
         if (!item.penguasaanTanah) item.penguasaanTanah = "TIDAK_DIKUASAI";
         if (!item.permasalahanAset) item.permasalahanAset = "CLEAN_AND_CLEAR";
 
+        // Logic: No Kode SAP = Tidak Dikuasai
+        // If the asset has no SAP number, it should default to TIDAK_DIKUASAI
+        if (!item.kodeSap) {
+            item.penguasaanTanah = "TIDAK_DIKUASAI";
+        }
+
         // Coords
         if (item.koordinatX === "" || item.koordinatX == null) item.koordinatX = null;
         if (item.koordinatY === "" || item.koordinatY == null) item.koordinatY = null;
