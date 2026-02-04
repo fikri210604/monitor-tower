@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
         // Defaults
         if (!item.jenisBangunan) item.jenisBangunan = "TAPAK_TOWER";
-        if (!item.penguasaanTanah) item.penguasaanTanah = "DIKUASAI";
+        if (!item.penguasaanTanah) item.penguasaanTanah = "TIDAK_DIKUASAI";
         if (!item.permasalahanAset) item.permasalahanAset = "CLEAN_AND_CLEAR";
 
         // Coords
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         const validJenisBangunan = ["GARDU_INDUK", "TAPAK_TOWER"];
         const validPenguasaanTanah = ["DIKUASAI", "TIDAK_DIKUASAI"];
         if (!validJenisBangunan.includes(item.jenisBangunan)) item.jenisBangunan = "TAPAK_TOWER";
-        if (!validPenguasaanTanah.includes(item.penguasaanTanah)) item.penguasaanTanah = "DIKUASAI";
+        if (!validPenguasaanTanah.includes(item.penguasaanTanah)) item.penguasaanTanah = "TIDAK_DIKUASAI";
 
         // Date Parsing
         const parseExcelDate = (dateVal: any): Date | null => {
