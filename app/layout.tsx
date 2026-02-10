@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Sertifikasi Tower PLN",
   description: "Aplikasi Manajemen Aset Tower PLN",
+  icons: {
+    icon: "/Logo_PLN.png",
+  },
 };
 
 export default function RootLayout({

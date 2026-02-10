@@ -5,7 +5,7 @@ import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { Home, User, LogOut, FileText, AlertTriangle, MapPinned, Users, History } from "lucide-react";
-import logoPln from "../../public/logopln.png";
+import logoPln from "../../public/Logo_PLN.png";
 
 export default function Sidebar({ className = "", onClose }: { className?: string; onClose?: () => void }) {
     const pathname = usePathname();

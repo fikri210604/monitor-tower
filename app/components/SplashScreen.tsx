@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import NextImage from "next/image";
-import logoPln from "../../public/logopln.png";
+import logoPln from "../../public/Logo_PLN.png";
 
 export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
     const [isVisible, setIsVisible] = useState(true);
