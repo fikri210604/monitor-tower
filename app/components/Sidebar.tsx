@@ -40,14 +40,14 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
     if (status === "unauthenticated") return null;
 
     return (
-        <aside className={`w-64 bg-pln-blue text-white flex flex-col shadow-xl h-full overflow-hidden ${className}`}>
-            <div className="p-6 border-b border-pln-cyan/30 flex items-center gap-3 shrink-0">
-                <div className="w-10 h-10 relative flex items-center justify-center overflow-hidden">
+        <aside className={`w-64 bg-pln-light/80 text-white flex flex-col shadow-xl h-full overflow-hidden ${className}`}>
+            <div className="p-4 border-b border-pln-cyan/30 flex items-center gap-3 shrink-0">
+                <div className="w-10 h-10 relative flex-shrink-0 bg-white/20 rounded-lg p-1.5">
                     <NextImage src={logoPln} alt="Logo PLN" className="w-full h-full object-contain" priority />
                 </div>
-                <div>
-                    <h1 className="text-xl font-bold tracking-tight">Sertifikasi</h1>
-                    <p className="text-xs text-pln-cyan font-medium">PLN Tower Asset</p>
+                <div className="min-w-0">
+                    <h1 className="text-lg font-bold tracking-tight leading-tight text-pln-blue">DIMATA</h1>
+                    <p className="text-[10px] text-pln-cyan font-medium leading-tight">Digitalisasi Monitoring Aset Tanah</p>
                 </div>
             </div>
 
@@ -62,17 +62,17 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
                             onClick={onClose}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
                                 ? "bg-pln-cyan text-white shadow-md font-medium"
-                                : "hover:bg-white/10 text-white/80 hover:text-white"
+                                : "hover:bg-white/10 text-pln-cyan hover:text-pln-blue"
                                 }`}
                         >
-                            <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-white/70 group-hover:text-pln-yellow transition-colors"}`} />
+                            <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-pln-cyan group-hover:text-pln-blue transition-colors"}`} />
                             <span>{link.label}</span>
                         </Link>
                     );
                 })}
             </nav>
 
-            <div className="p-4 border-t border-pln-cyan/30 bg-pln-blue/50 shrink-0">
+            <div className="p-4 border-t border-pln-cyan/30 bg-pln-light shrink-0">
                 {status === "loading" ? (
                     <div className="animate-pulse flex items-center gap-3 mb-4 px-2">
                         <div className="w-8 h-8 rounded-full bg-white/20"></div>
@@ -87,8 +87,8 @@ export default function Sidebar({ className = "", onClose }: { className?: strin
                             {session?.user?.name?.[0] || "U"}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate">{session?.user?.name}</p>
-                            <p className="text-xs text-white/70 truncate">{session?.user?.role}</p>
+                            <p className="text-sm font-semibold truncate text-pln-cyan">{session?.user?.name}</p>
+                            <p className="text-xs text-pln-cyan font-medium truncate">{session?.user?.role}</p>
                         </div>
                     </div>
                 )}

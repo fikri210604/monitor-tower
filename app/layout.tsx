@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sertifikasi Tower PLN",
-  description: "Aplikasi Manajemen Aset Tower PLN",
+  title: "DIMATA",
+  description: "Digitalisasi Monitoring Aset Tanah",
   icons: {
     icon: "/Logo_PLN.png",
   },

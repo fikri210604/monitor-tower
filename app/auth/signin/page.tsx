@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import Link from "next/link";
 import { Lock, User, Eye, EyeOff } from "lucide-react";
-import logoPln from "../../../public/logopln.png";
+import logoPln from "../../../public/Logo_PLN.png";
 
 export default function SignIn() {
     const router = useRouter();
@@ -61,12 +61,11 @@ export default function SignIn() {
             </div>
 
             <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden relative z-10">
-                <div className="p-8 text-center bg-gray-50 border-b border-gray-100">
-                    <div className="w-24 h-24 mx-auto mb-4 relative flex items-center justify-center">
+                <div className="p-2 text-center bg-gray-50 border-b border-gray-100">
+                    <div className="w-32 h-32 mx-auto relative flex items-center justify-center">
                         <NextImage src={logoPln} alt="Logo PLN" className="w-full h-full object-contain" priority />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800">PLN Asset Tower</h2>
-                    <p className="text-gray-500 text-sm mt-1">Masuk untuk mengakses aplikasi</p>
+                    <p className="text-pln-cyan tracking-wide uppercase">Digital - Tertib - Terpantau</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">

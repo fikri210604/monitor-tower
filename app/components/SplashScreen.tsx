@@ -21,18 +21,15 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
             className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-white transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
                 }`}
         >
-            <div className="relative mb-8">
+            <div className="relative">
                 <div className="w-32 h-32 flex items-center justify-center relative z-10 overflow-hidden">
                     <NextImage src={logoPln} alt="Logo PLN" className="w-full h-full object-contain" priority />
                 </div>
             </div>
 
             <div className="text-center space-y-2">
-                <h1 className="text-3xl font-bold text-pln-blue tracking-tight animate-pulse">
-                    Sertifikasi Tower
-                </h1>
-                <p className="text-sm font-medium text-pln-cyan tracking-widest uppercase">
-                    PT PLN (Persero)
+                <p className="text-sm font-medium text-pln-cyan font-bold tracking-widest uppercase">
+                    Digital - Tertib - Terpantau
                 </p>
             </div>
 
