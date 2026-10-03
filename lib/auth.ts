@@ -42,12 +42,18 @@ export const authOptions: NextAuthOptions = {
 
         try {
           if (isBcryptHash(user.password)) {
-            // Legacy Bcrypt
             passwordMatch = await bcrypt.compare(credentials.password, user.password);
           } else {
-            // New AES
             const decrypted = decrypt(user.password);
             passwordMatch = credentials.password === decrypted;
+
+            if (passwordMatch) {
+              const passwordHash = await bcrypt.hash(credentials.password, 10);
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { password: passwordHash },
+              });
+            }
           }
         } catch (error) {
           console.error("Auth Error:", error);
@@ -86,4 +92,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
-console.log("NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET);
+
+export default authOptions;

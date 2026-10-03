@@ -22,9 +22,6 @@ export async function POST(req: NextRequest) {
   try {
     const { rows, replaceAll } = await req.json();
 
-    console.log("📥 Received import request with", rows?.length || 0, "rows");
-    console.log("🔄 Replace all mode:", replaceAll);
-
     if (!Array.isArray(rows)) {
       return NextResponse.json({ error: "Invalid data format - expected 'rows' array" }, { status: 400 });
     }
@@ -35,9 +32,7 @@ export async function POST(req: NextRequest) {
 
     // If replaceAll is true, delete all existing assets
     if (replaceAll) {
-      console.log("🗑️  Deleting all existing assets...");
       const deleteResult = await prisma.asetTower.deleteMany({});
-      console.log(`✅ Deleted ${deleteResult.count} existing assets`);
       await logActivity((session.user as any).id, "DELETE_ASSET", {
         action: "DELETE_ALL_BEFORE_IMPORT",
         count: deleteResult.count
@@ -162,43 +157,29 @@ export async function POST(req: NextRequest) {
       } catch (error: any) {
         errorCount++;
         const reason = error.message || "Data preparation error";
-        console.error(`❌ Row ${rowNumber}: ${reason}`);
         errors.push({ row: rowNumber, kodeSap: item.kodeSap, reason });
       }
     }
 
     // 3. Execute Bulk Operations
-    console.log(`⚡ Batch Processing: ${toCreate.length} Creates, ${toUpdate.length} Updates`);
+    const operations = [
+      ...(toCreate.length > 0
+        ? [prisma.asetTower.createMany({ data: toCreate, skipDuplicates: true })]
+        : []),
+      ...toUpdate.map((item) => prisma.asetTower.update({
+        where: { id: item.id },
+        data: item.data,
+      })),
+    ];
 
-    // A. Bulk Create
-    if (toCreate.length > 0) {
-      const createRes = await prisma.asetTower.createMany({
-        data: toCreate,
-        skipDuplicates: true // Safety
-      });
-      console.log(`✅ Created ${createRes.count} new assets`);
-      successCount += createRes.count;
+    if (operations.length > 0) {
+      const results = await prisma.$transaction(operations);
+      const createResult = toCreate.length > 0 ? results[0] as { count: number } : null;
+      successCount += createResult?.count ?? 0;
+      successCount += toUpdate.length;
     }
 
-    // B. Parallel Updates (Using Promise.all)
-    if (toUpdate.length > 0) {
-      // Process in chunks of 50 to avoid connection limits
-      const chunkSize = 50;
-      for (let i = 0; i < toUpdate.length; i += chunkSize) {
-        const chunk = toUpdate.slice(i, i + chunkSize);
-        await Promise.all(chunk.map(item =>
-          prisma.asetTower.update({
-            where: { id: item.id },
-            data: item.data
-          }).catch((e: any) => {
-            console.error(`Update failed for ${item.data.kodeSap}:`, e);
-            errorCount++;
-            errors.push({ row: 0, kodeSap: item.data.kodeSap, reason: "Update Failed" });
-          })
-        ));
-        successCount += chunk.length;
-      }
-    }
+    errorCount = errors.length;
 
     if (successCount === 0 && errors.length > 0) {
       return NextResponse.json({
@@ -230,7 +211,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("❌ Import Error:", error);
+    console.error("Asset import failed", error);
     return NextResponse.json({
       error: error.message || "Internal Server Error",
       details: error.toString()

@@ -53,17 +53,12 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             // Kalau tidak ketemu, pakai sheet pertama
             if (!wsname) {
                 wsname = wb.SheetNames[0];
-                console.log("⚠️ Sheet 'SERTIPIKAT' not found, using first sheet:", wsname);
-            } else {
-                console.log("✅ Found target sheet:", wsname);
             }
 
             const ws = wb.Sheets[wsname];
 
             // First, read as array of arrays to find header row
             const sheetData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
-
-            console.log("📄 First 5 rows of Excel (raw):", sheetData.slice(0, 5));
 
             // Find the header row - look for known columns like "koordinat", "kode", etc.
             let headerRowIndex = -1;
@@ -82,7 +77,6 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                     rowStr.includes("longitude")) {
                     headerRowIndex = i;
                     headerRow = row;
-                    console.log(`✅ Found header row at index ${i}:`, row);
                     break;
                 }
             }
@@ -105,17 +99,6 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                 });
                 return obj;
             });
-
-            console.log("📋 Raw Excel data with correct headers (first 3 rows):", rawData.slice(0, 3));
-
-            // Log column names
-            if (rawData.length > 0) {
-                const firstRow = rawData[0] as any;
-                const columnNames = Object.keys(firstRow);
-
-                console.log("📊 Excel Column Headers:", columnNames);
-                console.log("📊 Total columns:", columnNames.length);
-            }
 
             // Helper: Normalize decimal separator (comma to dot)
             const normalizeDecimal = (value: any): number | null => {
@@ -162,20 +145,15 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                 const parsed = parseFloat(strValue);
 
                 // Validate coordinate range for koordinatX/Y
-                if (!isNaN(parsed)) {
-                    // Coordinates should be valid geographic values
-                    // Indonesia roughly: latitude -11 to 6, longitude 95 to 141
-                    // But we'll be lenient: -90 to 90, -180 to 180
-                    if (Math.abs(parsed) > 200) {
-                        console.warn(`⚠️  Suspicious coordinate value: ${value} → ${parsed}`);
-                    }
+                if (!isNaN(parsed) && Math.abs(parsed) > 200) {
+                    console.warn(`⚠️  Suspicious coordinate value: ${value} → ${parsed}`);
                 }
 
                 return isNaN(parsed) ? null : parsed;
             };
 
             // Normalize Keys dan Values menggunakan helper dari lib
-            const normalizedData = rawData.map((row: any, index: number) => {
+            const normalizedData = rawData.map((row: any) => {
                 const newRow: any = {};
                 Object.keys(row).forEach((key) => {
                     const fieldName = getFieldName(key);
@@ -208,11 +186,6 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                     }
                 });
 
-                if (index === 0) {
-                    console.log(`🔍 Row 1 normalized (ALL FIELDS):`, newRow);
-                    console.log(`🔍 Has koordinatX?`, newRow.koordinatX);
-                    console.log(`🔍 Has koordinatY?`, newRow.koordinatY);
-                }
                 return newRow;
             });
 
@@ -225,12 +198,8 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
                     const hasNo = row.no !== undefined && row.no !== null && String(row.no).trim() !== "";
                     return hasNo;
                 });
-                console.log(`🔍 Filtering applied. Kept ${validData.length} of ${normalizedData.length} rows.`);
-            } else {
-                console.log(`🔍 Filtering disabled. Importing all ${normalizedData.length} rows.`);
             }
 
-            console.log(`✅ Ready to import: ${validData.length} rows`);
             setData(validData);
             setError("");
         };
@@ -257,10 +226,6 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
         setImportSummary(null);
         setImportProgress(0); // Reset progress
 
-        console.log("🚀 Sending import request with", data.length, "rows");
-        console.log("First row sample:", data[0]);
-        console.log("Replace all mode:", replaceAll);
-
         // Simulate progress (since we can't track real-time from server)
         const progressInterval = setInterval(() => {
             setImportProgress(prev => Math.min(prev + 5, 90)); // Max 90% until done
@@ -280,7 +245,6 @@ export default function ExcelImport({ onImportSuccess }: ExcelImportProps) {
             setImportProgress(100); // Complete
 
             const result = await res.json();
-            console.log("📥 Import response:", result);
 
             if (!res.ok) {
                 // All failed

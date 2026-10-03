@@ -20,71 +20,38 @@ export default async function Dashboard() {
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(today.getDate() + 30);
 
-    // 1. Helper to fetch Stats by Type
-    const getStats = async (type: any) => {
-        // 1. Total Assets of type
-        const total = await prisma.asetTower.count({ where: { jenisBangunan: type } });
-
-        // 2. Tanpa Data (Gray): No Kode SAP
-        const tanpaDataCount = await prisma.asetTower.count({
-            where: {
-                jenisBangunan: type,
-                kodeSap: null
-            }
-        });
-
-        // 3. Certified (Green): Has Kode SAP AND Has Valid Certificate
-        // Valid = not null, not "", not "-"
-        const certifiedCount = await prisma.asetTower.count({
-            where: {
-                jenisBangunan: type,
-                kodeSap: { not: null },
-                nomorSertifikat: {
-                    not: null,
-                    notIn: ["", "-"]
-                }
-            }
-        });
-
-        // 4. Belum (Orange): The remainder.
-        // Logic: Total = TanpaData + Certified + Belum
-        const belumCount = total - tanpaDataCount - certifiedCount;
-
-        // Asset Health Stats
-        // Asset Health Stats
-        const safe = await prisma.asetTower.count({
-            where: {
-                jenisBangunan: type,
-                kodeSap: { not: null },
-                permasalahanAset: { contains: "clean", mode: "insensitive" }
-            }
-        });
-        const problem = await prisma.asetTower.count({
-            where: {
-                jenisBangunan: type,
-                kodeSap: { not: null },
-                permasalahanAset: { not: null },
-                NOT: { permasalahanAset: { contains: "clean", mode: "insensitive" } }
-            }
-        });
-
-        // Unknown Health (Tanpa Data for Health)
-        const unknownHealth = total - safe - problem;
-
-        return {
-            total,
-            certified: certifiedCount,
-            belum: belumCount,
-            nullCert: tanpaDataCount,
-            safe,
-            problem,
-            unknownHealth
-        };
+    type StatsRow = {
+        jenisBangunan: string;
+        total: number;
+        nullCert: number;
+        certified: number;
+        safe: number;
+        problem: number;
     };
 
-    const [towerStats, giStats, recentAssets, expiringAssets] = await Promise.all([
-        getStats("TAPAK_TOWER"),
-        getStats("GARDU_INDUK"),
+    const [statsRows, recentAssets, expiringAssets] = await Promise.all([
+        prisma.$queryRaw<StatsRow[]>`
+            SELECT
+                "jenisBangunan"::text AS "jenisBangunan",
+                COUNT(*)::int AS "total",
+                COUNT(*) FILTER (WHERE "kodeSap" IS NULL)::int AS "nullCert",
+                COUNT(*) FILTER (
+                    WHERE "kodeSap" IS NOT NULL
+                      AND "nomorSertifikat" IS NOT NULL
+                      AND "nomorSertifikat" NOT IN ('', '-')
+                )::int AS "certified",
+                COUNT(*) FILTER (
+                    WHERE "kodeSap" IS NOT NULL
+                      AND "permasalahanAset" ILIKE '%clean%'
+                )::int AS "safe",
+                COUNT(*) FILTER (
+                    WHERE "kodeSap" IS NOT NULL
+                      AND "permasalahanAset" IS NOT NULL
+                      AND "permasalahanAset" NOT ILIKE '%clean%'
+                )::int AS "problem"
+            FROM "aset_towers"
+            GROUP BY "jenisBangunan"
+        `,
         // Fetch 5 most recent assets
         prisma.asetTower.findMany({
             take: 5,
@@ -115,6 +82,28 @@ export default async function Dashboard() {
             }
         })
     ]);
+
+    const getStats = (type: string) => {
+        const row = statsRows.find((item) => item.jenisBangunan === type);
+        const total = row?.total ?? 0;
+        const safe = row?.safe ?? 0;
+        const problem = row?.problem ?? 0;
+        const nullCert = row?.nullCert ?? 0;
+        const certified = row?.certified ?? 0;
+
+        return {
+            total,
+            certified,
+            belum: total - nullCert - certified,
+            nullCert,
+            safe,
+            problem,
+            unknownHealth: total - safe - problem,
+        };
+    };
+
+    const towerStats = getStats("TAPAK_TOWER");
+    const giStats = getStats("GARDU_INDUK");
 
     const totalAset = towerStats.total + giStats.total;
     const sertifikasiSelesai = towerStats.certified + giStats.certified;

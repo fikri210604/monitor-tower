@@ -130,7 +130,7 @@ export async function PUT(
         if (username) updateData.username = username;
         if (role) updateData.role = role;
 
-        // If password is provided, validate and encrypt it (using AES instead of Bcrypt)
+        // Store only a one-way password hash.
         if (password) {
             const passwordValidation = validatePassword(password);
             if (!passwordValidation.valid) {
@@ -140,8 +140,7 @@ export async function PUT(
                 );
             }
 
-            const { encrypt } = await import("@/lib/crypto");
-            updateData.password = encrypt(password);
+            updateData.password = await bcrypt.hash(password, 10);
         }
 
         // Update user

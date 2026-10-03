@@ -11,12 +11,12 @@ export const config = {
         /*
          * Match all request paths except for the ones starting with:
          * - auth (authentication routes)
-         * - api (API routes, some might need protection but we handle that in route handlers usually, or we can include here)
+         * - api (API routes enforce authorization in their route handlers)
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          * - public folder
          */
-        "/((?!auth|_next/static|_next/image|favicon.ico).*)",
+        "/((?!auth|api|_next/static|_next/image|favicon.ico).*)",
     ],
 };

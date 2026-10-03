@@ -128,16 +128,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Encrypt password (using AES instead of Bcrypt for reversibility)
-        const { encrypt } = await import("@/lib/crypto");
-        const encryptedPassword = encrypt(password);
+        const passwordHash = await bcrypt.hash(password, 10);
 
         // Create user
         const newUser = await prisma.user.create({
             data: {
                 name,
                 username,
-                password: encryptedPassword,
+                password: passwordHash,
                 role: role || "OPERATOR", // default to OPERATOR if not specified
             },
             select: {

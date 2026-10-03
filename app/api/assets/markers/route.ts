@@ -57,8 +57,8 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(serializedMarkers, {
             headers: {
-                // Cache for 1 minute to reduce DB load on frequent map refreshes
-                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+                // This response is session-protected and must not be shared between users.
+                'Cache-Control': 'private, max-age=60, stale-while-revalidate=300'
             }
         });
     } catch (error) {

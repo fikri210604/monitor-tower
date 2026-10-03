@@ -27,10 +27,16 @@ export async function verifyCurrentPassword(password: string) {
     if (isBcryptHash(user.password)) {
         return await bcrypt.compare(password, user.password);
     } else {
-        // AES Verify
         try {
             const decrypted = decrypt(user.password);
-            return password === decrypted;
+            const isValid = password === decrypted;
+            if (isValid) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { password: await bcrypt.hash(password, 10) },
+                });
+            }
+            return isValid;
         } catch {
             return false;
         }
@@ -46,32 +52,23 @@ export async function getUserWithSecrets(userId: string) {
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
+        select: {
+            id: true,
+            name: true,
+            username: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+        },
     });
 
     if (!user) {
         throw new Error("User not found");
     }
 
-    // Decrypt password if possible
-    const { isBcryptHash, decrypt } = await import("@/lib/crypto");
-    let passwordDisplay = user.password;
-    let isEncrypted = true;
-
-    try {
-        if (isBcryptHash(user.password)) {
-            isEncrypted = false; // Legacy mode (cannot view)
-        } else {
-            passwordDisplay = decrypt(user.password);
-        }
-    } catch (e) {
-        console.error("Decryption failed", e);
-        passwordDisplay = "Error Decrypting";
-    }
-
-    // Return extended user object
     return {
         ...user,
-        password: passwordDisplay,
-        isEncrypted, // Flag to tell frontend if it's a real password or just a hash
+        password: null,
+        isEncrypted: false,
     };
 }
