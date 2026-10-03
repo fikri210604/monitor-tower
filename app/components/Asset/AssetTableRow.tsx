@@ -68,6 +68,16 @@ export default function AssetTableRow({
                 {asset.provinsi || "-"}
             </td>
 
+            {/* Koordinat X */}
+            <td className="px-4 py-3 text-gray-600 font-mono text-xs">
+                {asset.koordinatX ? asset.koordinatX.toFixed(6) : "-"}
+            </td>
+
+            {/* Koordinat Y */}
+            <td className="px-4 py-3 text-gray-600 font-mono text-xs">
+                {asset.koordinatY ? asset.koordinatY.toFixed(6) : "-"}
+            </td>
+
             {/* Nomor Sertifikat (Just Text) */}
             <td className="px-4 py-3 text-gray-600 font-medium">
                 {userRole === "OPERATOR" ? (

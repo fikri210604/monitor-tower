@@ -37,10 +37,28 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const { isBcryptHash, decrypt } = await import("@/lib/crypto");
+        let passwordMatch = false;
+
+        try {
+          if (isBcryptHash(user.password)) {
+            passwordMatch = await bcrypt.compare(credentials.password, user.password);
+          } else {
+            const decrypted = decrypt(user.password);
+            passwordMatch = credentials.password === decrypted;
+
+            if (passwordMatch) {
+              const passwordHash = await bcrypt.hash(credentials.password, 10);
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { password: passwordHash },
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Auth Error:", error);
+          return null;
+        }
 
         if (!passwordMatch) {
           return null;
@@ -74,4 +92,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
-console.log("NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET);
+
+export default authOptions;

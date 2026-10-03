@@ -7,10 +7,9 @@ import bcrypt from "bcryptjs";
 export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);
-        // Uses username logic if email is not available or mapped to username
-        const username = session?.user?.name || (session?.user as any)?.username;
+        const userId = (session?.user as any)?.id;
 
-        if (!username) {
+        if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -24,14 +23,24 @@ export async function POST(request: Request) {
         }
 
         const user = await prisma.user.findUnique({
-            where: { username: username },
+            where: { id: userId },
         });
 
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        let isPasswordValid = false;
+        if (user.password.startsWith("$2a$") || user.password.startsWith("$2b$") || user.password.startsWith("$2y$")) {
+            isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        } else {
+            const { decrypt } = await import("@/lib/crypto");
+            try {
+                isPasswordValid = decrypt(user.password) === currentPassword;
+            } catch {
+                isPasswordValid = false;
+            }
+        }
 
         if (!isPasswordValid) {
             return NextResponse.json(
@@ -43,7 +52,7 @@ export async function POST(request: Request) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         await prisma.user.update({
-            where: { username: username },
+            where: { id: userId },
             data: { password: hashedPassword },
         });
 

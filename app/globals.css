@@ -3,11 +3,13 @@
 @theme {
   --color-pln-blue: #0073B1;
   --color-pln-cyan: #00A2E0;
-  --color-pln-yellow: #FFCA00;
+  --color-pln-yellow: #FFF301;
   --color-pln-red: #E42313;
   
   --color-background: #f8fafc; /* Slate-50 */
   --color-foreground: #0f172a; /* Slate-900 */
+  --color-pln-light: #ebf8ff;
+
 }
 
 /* Custom Utilities if needed */

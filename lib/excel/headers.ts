@@ -82,11 +82,9 @@ export function normalizeEnumValue(value: any, enumType: EnumType): string | nul
  * Mendukung berbagai variasi nama kolom
  */
 export const COLUMN_MAPPINGS: Record<string, string> = {
-    // Kode SAP
-    "KODE SAP": "kodeSap",
-    "KODESAP": "kodeSap",
-    "KODE SAP TANAH": "kodeSap",
-    "KODESAPTANAH": "kodeSap",
+    // Nomor SAP
+    "NOMOR SAP": "kodeSap",
+    "NOMORSAP": "kodeSap",
 
     // Kode Unit
     "KODE UNIT": "kodeUnit",

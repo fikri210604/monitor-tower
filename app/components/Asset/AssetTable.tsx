@@ -30,6 +30,8 @@ export default function AssetTable({
         setStatusFilter,
         expiringFilter,
         setExpiringFilter,
+        certFilter,
+        setCertFilter,
         uniqueStatuses,
         filteredAssets,
         hasActiveFilters,
@@ -130,17 +132,30 @@ export default function AssetTable({
                     </div>
 
                     {/* Status Filter */}
-                    <div className="flex items-center gap-2 min-w-[200px]">
+                    <div className="flex items-center gap-2 min-w-[180px]">
                         <Filter className="w-4 h-4 text-gray-400" />
                         <select
                             value={statusFilter}
                             onChange={(e) => handleStatusFilterChange(e.target.value)}
-                            className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue"
+                            className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue text-sm"
                         >
                             <option value="all">{ALL_STATUS_FILTER_LABEL}</option>
                             {uniqueStatuses.map(status => (
                                 <option key={status} value={status}>{status}</option>
                             ))}
+                        </select>
+                    </div>
+
+                    {/* Certificate Filter */}
+                    <div className="flex items-center gap-2 min-w-[180px]">
+                        <select
+                            value={certFilter}
+                            onChange={(e) => setCertFilter(e.target.value as "all" | "certified" | "uncertified")}
+                            className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pln-blue/20 focus:border-pln-blue text-sm"
+                        >
+                            <option value="all">Semua Sertifikat</option>
+                            <option value="certified">✅ Sudah Sertifikat</option>
+                            <option value="uncertified">⚠️ Belum Sertifikat</option>
                         </select>
                     </div>
 
@@ -186,7 +201,7 @@ export default function AssetTable({
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-500 font-medium whitespace-nowrap">
                         <tr>
-                            <SortableHeader field="kodeSap" label="Kode SAP" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <SortableHeader field="kodeSap" label="Nomor SAP" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="deskripsi" label="Deskripsi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="luasTanah" label="Luas (m²)" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="tahunPerolehan" label="Tahun" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
@@ -195,6 +210,8 @@ export default function AssetTable({
                             <SortableHeader field="kecamatan" label="Kecamatan" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="kabupaten" label="Kabupaten/Kota" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="provinsi" label="Provinsi" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+                            <th className="px-4 py-3">Koordinat X</th>
+                            <th className="px-4 py-3">Koordinat Y</th>
                             <SortableHeader field="nomorSertifikat" label="Nomor Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="jenisDokumen" label="File Sertifikat" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                             <SortableHeader field="permasalahanAset" label="Masalah" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
@@ -206,7 +223,7 @@ export default function AssetTable({
                     <tbody className="divide-y divide-gray-100">
                         {paginatedItems.length === 0 ? (
                             <tr>
-                                <td colSpan={14} className="px-4 py-8 text-center text-gray-400">
+                                <td colSpan={16} className="px-4 py-8 text-center text-gray-400">
                                     {hasActiveFilters
                                         ? "Tidak ada data yang sesuai dengan filter."
                                         : "Belum ada data aset."}

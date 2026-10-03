@@ -5,6 +5,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import UserTable from "@/app/components/User/UserTable";
 import UserFormModal from "@/app/components/User/UserFormModal";
+import UserDetailModal from "@/app/components/User/UserDetailModal";
+import ReAuthModal from "@/app/components/User/ReAuthModal";
+import { verifyCurrentPassword, getUserWithSecrets } from "@/app/actions/user";
 import Toast, { ToastType } from "@/app/components/ui/Toast";
 import { Plus, RefreshCw } from "lucide-react";
 import { User } from "@/types/user";
@@ -16,8 +19,15 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true);
 
     // CRUD States
+    // CRUD States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    
+    // View Details States
+    const [isReAuthOpen, setIsReAuthOpen] = useState(false);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [selectedUserForView, setSelectedUserForView] = useState<User | null>(null);
+    const [secretUser, setSecretUser] = useState<any | null>(null);
 
     // Toast State
     const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
@@ -113,6 +123,26 @@ export default function UsersPage() {
         }
     };
 
+    // View Detail Handlers
+    const handleView = (user: User) => {
+        setSelectedUserForView(user);
+        setIsReAuthOpen(true);
+    };
+
+    const handleReAuthSuccess = async () => {
+        setIsReAuthOpen(false);
+        if (selectedUserForView) {
+            try {
+                const fullUser = await getUserWithSecrets(selectedUserForView.id);
+                setSecretUser(fullUser);
+                setIsDetailOpen(true);
+            } catch (error) {
+                console.error(error);
+                showToast("Gagal mengambil data detail user", "error");
+            }
+        }
+    };
+
     // Don't render if not Super Admin
     if (status === "loading" || status === "unauthenticated") {
         return (
@@ -161,7 +191,7 @@ export default function UsersPage() {
 
             {/* User Table */}
             <div>
-                <UserTable users={users} onDelete={handleDelete} onEdit={handleEdit} />
+                <UserTable users={users} onDelete={handleDelete} onEdit={handleEdit} onView={handleView} />
             </div>
 
             {/* Modal */}
@@ -170,6 +200,20 @@ export default function UsersPage() {
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSave}
                 initialData={editingUser}
+            />
+
+            {/* View Detail Modals */}
+            <ReAuthModal
+                isOpen={isReAuthOpen}
+                onClose={() => setIsReAuthOpen(false)}
+                onSuccess={handleReAuthSuccess}
+                verifyAction={verifyCurrentPassword}
+            />
+
+            <UserDetailModal
+                isOpen={isDetailOpen}
+                onClose={() => setIsDetailOpen(false)}
+                user={secretUser}
             />
         </div>
     );

@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  output   = "../src/generated"
 }
 
 datasource db {
@@ -22,7 +22,7 @@ model User {
 
 model AsetTower {
   id                     String                @id @default(uuid())
-  kodeSap                Int                   @default(10100)
+  kodeSap                BigInt?
   kodeUnit               Int                   @default(3215)
   deskripsi              String?
   luasTanah              Float?
@@ -62,6 +62,7 @@ model FotoAset {
   asetTowerId String
   asetTower   AsetTower @relation(fields: [asetTowerId], references: [id], onDelete: Cascade)
 
+  @@index([asetTowerId])
   @@map("foto_asets")
 }
 

@@ -128,15 +128,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt.hash(password, 10);
 
         // Create user
         const newUser = await prisma.user.create({
             data: {
                 name,
                 username,
-                password: hashedPassword,
+                password: passwordHash,
                 role: role || "OPERATOR", // default to OPERATOR if not specified
             },
             select: {

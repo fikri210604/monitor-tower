@@ -34,7 +34,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
 
     // Filter photos for Operator
     const filteredPhotos = isOperator
-        ? asset.fotoAset.filter(f => f.kategori !== "ASET" && f.kategori !== null)
+        ? asset.fotoAset.filter((f: any) => f.kategori !== "ASET" && f.kategori !== null)
         : asset.fotoAset;
 
     return (
@@ -127,16 +127,18 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
                                     {asset.luasTanah ? `${asset.luasTanah.toLocaleString('id-ID')} m²` : "-"}
                                 </p>
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Status Penguasaan</label>
-                                <p className="font-semibold text-gray-800">
-                                    {asset.penguasaanTanah === "DIKUASAI" ? (
-                                        <span className="text-green-600">Dikuasai Penuh</span>
-                                    ) : (
-                                        <span className="text-red-600">Tidak Dikuasai</span>
-                                    )}
-                                </p>
-                            </div>
+                            {!isOperator && (
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Status Penguasaan</label>
+                                    <p className="font-semibold text-gray-800">
+                                        {asset.penguasaanTanah === "DIKUASAI" ? (
+                                            <span className="text-green-600">Dikuasai Penuh</span>
+                                        ) : (
+                                            <span className="text-red-600">Tidak Dikuasai</span>
+                                        )}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                         <div className="p-6 border-t border-gray-100 bg-gray-50/50">
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-1">Alamat Lengkap</label>

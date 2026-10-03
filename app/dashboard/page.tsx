@@ -20,24 +20,38 @@ export default async function Dashboard() {
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(today.getDate() + 30);
 
-    // 1. Fetch Basic Stats (Parallel)
-    const [
-        totalAset,
-        sertifikasiSelesai,
-        asetAman,
-        recentAssets,
-        expiringAssets
-    ] = await Promise.all([
-        prisma.asetTower.count(),
-        prisma.asetTower.count({ where: { nomorSertifikat: { not: null } } }),
-        prisma.asetTower.count({
-            where: {
-                OR: [
-                    { permasalahanAset: null },
-                    { permasalahanAset: { contains: "clean", mode: "insensitive" } }
-                ]
-            }
-        }),
+    type StatsRow = {
+        jenisBangunan: string;
+        total: number;
+        nullCert: number;
+        certified: number;
+        safe: number;
+        problem: number;
+    };
+
+    const [statsRows, recentAssets, expiringAssets] = await Promise.all([
+        prisma.$queryRaw<StatsRow[]>`
+            SELECT
+                "jenisBangunan"::text AS "jenisBangunan",
+                COUNT(*)::int AS "total",
+                COUNT(*) FILTER (WHERE "kodeSap" IS NULL)::int AS "nullCert",
+                COUNT(*) FILTER (
+                    WHERE "kodeSap" IS NOT NULL
+                      AND "nomorSertifikat" IS NOT NULL
+                      AND "nomorSertifikat" NOT IN ('', '-')
+                )::int AS "certified",
+                COUNT(*) FILTER (
+                    WHERE "kodeSap" IS NOT NULL
+                      AND "permasalahanAset" ILIKE '%clean%'
+                )::int AS "safe",
+                COUNT(*) FILTER (
+                    WHERE "kodeSap" IS NOT NULL
+                      AND "permasalahanAset" IS NOT NULL
+                      AND "permasalahanAset" NOT ILIKE '%clean%'
+                )::int AS "problem"
+            FROM "aset_towers"
+            GROUP BY "jenisBangunan"
+        `,
         // Fetch 5 most recent assets
         prisma.asetTower.findMany({
             take: 5,
@@ -50,12 +64,12 @@ export default async function Dashboard() {
                 permasalahanAset: true
             }
         }),
-        // Fetch Expiring Certificates (End Date <= 30 Days from now AND End Date >= Today)
+        // Fetch Expiring Certificates
         prisma.asetTower.findMany({
             where: {
                 tanggalAkhirSertifikat: {
                     lte: thirtyDaysFromNow,
-                    gte: today // Optional: Don't show already expired? Or maybe show them too? Let's show all upcoming + expired for now.
+                    gte: today
                 }
             },
             take: 10,
@@ -69,7 +83,35 @@ export default async function Dashboard() {
         })
     ]);
 
-    const masalahAktif = totalAset - asetAman;
+    const getStats = (type: string) => {
+        const row = statsRows.find((item) => item.jenisBangunan === type);
+        const total = row?.total ?? 0;
+        const safe = row?.safe ?? 0;
+        const problem = row?.problem ?? 0;
+        const nullCert = row?.nullCert ?? 0;
+        const certified = row?.certified ?? 0;
+
+        return {
+            total,
+            certified,
+            belum: total - nullCert - certified,
+            nullCert,
+            safe,
+            problem,
+            unknownHealth: total - safe - problem,
+        };
+    };
+
+    const towerStats = getStats("TAPAK_TOWER");
+    const giStats = getStats("GARDU_INDUK");
+
+    const totalAset = towerStats.total + giStats.total;
+    const sertifikasiSelesai = towerStats.certified + giStats.certified;
+    const asetAman = towerStats.safe + giStats.safe;
+    const asetMasalah = towerStats.problem + giStats.problem;
+    const totalTanpaData = towerStats.nullCert + giStats.nullCert;
+
+    const masalahAktif = asetMasalah;
     const sertifikasiPercentage = totalAset > 0 ? Math.round((sertifikasiSelesai / totalAset) * 100) : 0;
 
     return (
@@ -90,7 +132,7 @@ export default async function Dashboard() {
             <ExpiryWidget expiringAssets={expiringAssets} />
 
             {/* Main Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <StatCard
                     title="Total Aset"
                     value={totalAset}
@@ -115,6 +157,12 @@ export default async function Dashboard() {
                     subtitle="Perlu Tindak Lanjut"
                     color="text-red-500"
                 />
+                <StatCard
+                    title="Tanpa Data"
+                    value={totalTanpaData}
+                    subtitle="Tidak Ada Kode SAP"
+                    color="text-gray-400"
+                />
             </div>
 
             {/* --- Executive Dashboard (Master & Admin Only) --- */}
@@ -129,9 +177,8 @@ export default async function Dashboard() {
                         {/* Interactive Charts */}
                         <div className="md:col-span-2">
                             <DashboardCharts
-                                total={totalAset}
-                                certified={sertifikasiSelesai}
-                                safe={asetAman}
+                                tower={towerStats}
+                                gi={giStats}
                             />
                         </div>
 
@@ -158,7 +205,7 @@ export default async function Dashboard() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {recentAssets.map(asset => (
+                                        {recentAssets.map((asset: any) => (
                                             <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-4 py-3 font-medium text-gray-800">
                                                     {asset.deskripsi || "Tanpa Nama"}

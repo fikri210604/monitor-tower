@@ -130,7 +130,7 @@ export async function PUT(
         if (username) updateData.username = username;
         if (role) updateData.role = role;
 
-        // If password is provided, validate and hash it
+        // Store only a one-way password hash.
         if (password) {
             const passwordValidation = validatePassword(password);
             if (!passwordValidation.valid) {
